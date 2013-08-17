@@ -1,4 +1,4 @@
-SimpleStrengthLog
+Simple Strength Log
 =================
 
-Simple Strength Log (Android App)
+Android app for logging strength-training workouts.  Intended to be very simple with limited feature set, basically a clipboard with a piece of paper but on a phone.
