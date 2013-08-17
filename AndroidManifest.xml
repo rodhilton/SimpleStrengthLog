@@ -22,6 +22,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name="com.nomachetejuggling.ssl.AddActivity"
+            android:label="@string/title_activity_add"
+            android:parentActivityName="com.nomachetejuggling.ssl.ExerciseList" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.nomachetejuggling.ssl.ExerciseList" />
+        </activity>
     </application>
 
 </manifest>
