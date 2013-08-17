@@ -1,16 +1,23 @@
 package com.nomachetejuggling.ssl;
 
+import java.util.ArrayList;
+
+import com.nomachetejuggling.ssl.model.Exercise;
+
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Intent;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 
 public class ExerciseList extends Activity {
 	private ListView listView;
+	ArrayAdapter<String> aa;
+	ArrayList<String> exercises;
 	
 	static final int ADD_EXERCISE_REQUEST = 0;
 
@@ -18,6 +25,12 @@ public class ExerciseList extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_exercise_list);
+
+		ListView listView = (ListView) this.findViewById(R.id.exerciseList);
+		exercises = new ArrayList<String>();
+		aa = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,  
+				exercises);
+        listView.setAdapter(aa);
 
 	}
 
@@ -42,10 +55,17 @@ public class ExerciseList extends Activity {
 	
 	@Override
 	 protected void onActivityResult(int requestCode, int resultCode,
-             Intent data) {
+             Intent intent) {
+		 super.onActivityResult(requestCode, resultCode, intent);
          if (requestCode == ADD_EXERCISE_REQUEST) {
              if (resultCode == RESULT_OK) {
-                 Log.i("stuff", "junk");
+            	 Bundle extras = intent.getExtras();
+                 if(extras != null);
+                 Exercise newExercise = (Exercise)extras.getSerializable("newExercise");
+                 Log.i("newExercise", newExercise.toString());
+                 
+                 exercises.add(newExercise.getName());
+                 this.aa.notifyDataSetChanged();
              }
          }
      }

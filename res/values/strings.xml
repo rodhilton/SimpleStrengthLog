@@ -5,8 +5,9 @@
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
     <string name="add_exercise">Add Exercise</string>
-    <string name="title_activity_add">AddActivity</string>
+    <string name="title_activity_add">Add Exercise</string>
     <string name="exerciseNameLabel">Name:</string>
     <string name="saveButton">Save</string>
+    <string name="save_exercise">Save</string>
 
 </resources>
