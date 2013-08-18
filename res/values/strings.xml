@@ -9,5 +9,6 @@
     <string name="exerciseNameLabel">Name:</string>
     <string name="saveButton">Save</string>
     <string name="save_exercise">Save</string>
+    <string name="empty_exercise_list">Add exercises here, then select them to log them as part of a workout</string>
 
 </resources>

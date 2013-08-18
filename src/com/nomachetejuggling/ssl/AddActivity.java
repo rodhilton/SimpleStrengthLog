@@ -47,13 +47,13 @@ public class AddActivity extends Activity {
 			NavUtils.navigateUpFromSameTask(this);
 			return true;
 		case R.id.action_save: 
-			saveExercise(null);
+			saveExercise();
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
 	}
 	
-	public void saveExercise(View view) {
+	public void saveExercise() {
 		TextView nameText = (TextView) this.findViewById(R.id.nameText);
 		
 		Exercise newExercise = new Exercise();

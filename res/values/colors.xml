@@ -5,4 +5,5 @@
         >#aa3024</color>
     <color name="actionbar_background">#79221a</color>
     <color name="actionbar_color">#ffffff</color>
+    <color name="dimmed_text">#888888</color>
 </resources>
