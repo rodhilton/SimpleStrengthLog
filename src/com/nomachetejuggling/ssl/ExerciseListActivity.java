@@ -63,7 +63,6 @@ public class ExerciseListActivity extends Activity {
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 					long arg3) {
-				Toast.makeText(ExerciseListActivity.this, "" + arg2, Toast.LENGTH_SHORT).show();
 				Exercise exercise = exercises.get(arg2);
 				Intent intent = new Intent(ExerciseListActivity.this, LogActivity.class);
 				intent.putExtra("exercise",exercise);

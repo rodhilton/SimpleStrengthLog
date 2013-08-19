@@ -37,7 +37,8 @@
         <activity
             android:name="com.nomachetejuggling.ssl.LogActivity"
             android:label="@string/title_activity_log"
-            android:parentActivityName="com.nomachetejuggling.ssl.ExerciseListActivity" >
+            android:parentActivityName="com.nomachetejuggling.ssl.ExerciseListActivity" 
+            android:windowSoftInputMode="stateHidden">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.nomachetejuggling.ssl.ExerciseList" />
