@@ -18,20 +18,18 @@ public class Util {
 	    File file = new File(context.getExternalFilesDir(
 	            Environment.DIRECTORY_PICTURES), albumName);
 	    if (!file.mkdirs()) {
-	        Log.e("blahrg", "Directory not created");
+	        Log.w("blahrg", "Directory not created");
 	    }
 	    return file;
 	}
 	
 	public static File getExerciseFile(Context context) {
-		File dir = context.getExternalFilesDir(null);
-		if(!dir.mkdirs()) {
-			Log.e("blahrg", "Directory not created");
+		File dir = Environment.getExternalStorageDirectory();
+		File myDir = new File(dir, "/SimpleHealthSuite/Strength");
+		if(!myDir.mkdirs()) {
+			Log.w("Util", "Directory not created");
 		}
-//		if (!file.getParentFile().mkdirs()) {
-//	        Log.e("blahrg", "Directory not created");
-//	    }
-	    return new File(dir, "exercise_list.json");
+	    return new File(myDir, "exerciseList.json");
 	}
 
 }
