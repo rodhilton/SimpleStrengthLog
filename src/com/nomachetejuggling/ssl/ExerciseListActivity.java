@@ -27,15 +27,19 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 //TODO: Long press to Edit/Delete exercise
+//TODO: handle rotation
 //TODO: Actual exercise logging
 //TODO: Favorite (part of long press menu, later a separate star)
 
-public class ExerciseList extends Activity {
+public class ExerciseListActivity extends Activity {
 	ExerciseAdapter exerciseAdapter;
 	ArrayList<Exercise> exercises;
 
@@ -53,6 +57,19 @@ public class ExerciseList extends Activity {
 
 		exerciseAdapter = new ExerciseAdapter(this, R.layout.list_exercises, R.id.line1, exercises);
 		listView.setAdapter(exerciseAdapter);
+		
+		listView.setOnItemClickListener(new OnItemClickListener()
+		{
+			@Override
+			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
+					long arg3) {
+				Toast.makeText(ExerciseListActivity.this, "" + arg2, Toast.LENGTH_SHORT).show();
+				Exercise exercise = exercises.get(arg2);
+				Intent intent = new Intent(ExerciseListActivity.this, LogActivity.class);
+				intent.putExtra("exercise",exercise);
+				startActivity(intent);
+			}
+		});
 
 	}
 
@@ -98,31 +115,31 @@ public class ExerciseList extends Activity {
 
 	@Override
 	protected void onStop() {
-		super.onStop(); // Always call the superclass method first
+		super.onStop();
 		saveExercises();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void onStart() {
-		super.onStart(); // Always call the superclass method first
+		super.onStart();
 		loadExercises();
 		exerciseAdapter.notifyDataSetChanged();
 	}
 
-	// TODO: Deal with the card not being mounted
 	private void saveExercises() {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
 		String json = gson.toJson(exercises);
 		File file = Util.getExerciseFile(this.getApplicationContext());
-		Log.i("IO", "Writing to " + file.getAbsolutePath() + "\n" + json);
+		Log.d("IO", "Writing to " + file.getAbsolutePath() + "\n" + json);
 		try {
-			PrintWriter printWriter = new PrintWriter(file);
-			printWriter.write(json);
-			printWriter.close();
-		} catch (FileNotFoundException e) {
-			Log.e("file", "blah", e);
+			FileUtils.write(file, json, "UTF-8");
+		} catch (IOException e) {
+			Toast.makeText(
+					getApplicationContext(), 
+					getString(R.string.error_cannot_save_exercises), 
+					Toast.LENGTH_SHORT).show();
 		}
 	}
 
@@ -133,16 +150,15 @@ public class ExerciseList extends Activity {
 		try {
 			json = FileUtils.readFileToString(file, "UTF-8");
 			Gson gson = new GsonBuilder().setPrettyPrinting().create();
-			Log.i("IO", "Start Reading from " + file.getAbsolutePath() + "\n" + json);
+			Log.d("IO", "Start Reading from " + file.getAbsolutePath() + "\n" + json);
 
-			Type collectionType = new TypeToken<Collection<Exercise>>() {
-			}.getType();
+			Type collectionType = new TypeToken<Collection<Exercise>>() {}.getType();
 			List<Exercise> exercisesRead = gson.fromJson(json, collectionType);
 			Collections.sort(exercisesRead);
 			exercises.clear();
 			exercises.addAll(exercisesRead);
 		} catch (IOException e) {
-			Log.e("file", "problem reading file", e);
+			//Ignore, a missing file is either an unmounted SD Card (unrecoverable) or a first-time run.
 		}
 	}
 
