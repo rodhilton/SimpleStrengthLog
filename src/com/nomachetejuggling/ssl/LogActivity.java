@@ -14,13 +14,16 @@ import org.joda.time.LocalDate;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+
 import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.LogEntry;
 
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -93,8 +96,9 @@ public class LogActivity extends Activity {
 		    ab.setSubtitle(currentExercise.getName()); 
 		  }
 		
-		this.loadCurrentLogs();
-		this.showCurrentLogs();
+		File dir = Util.getLogStorageDir(this.getApplicationContext());
+		File file = new File(dir, new LocalDate().toString("yyyy-MM-dd")+".json");
+		new PostTask(this).execute(file);
 	}
 
 	/**
@@ -141,22 +145,10 @@ public class LogActivity extends Activity {
 		this.persistCurrentLogs();
 	}
 	
-	public void loadCurrentLogs() {
-		File dir = Util.getLogStorageDir(this.getApplicationContext());
-		File file = new File(dir, new LocalDate().toString("yyyy-MM-dd")+".json");
-		
-		try {
-			String json = FileUtils.readFileToString(file, "UTF-8");
-			Gson gson = new GsonBuilder().setPrettyPrinting().create();
-			Log.d("IO", "Start Reading from " + file.getAbsolutePath() + "\n" + json);
-
-			Type collectionType = new TypeToken<Collection<LogEntry>>() {}.getType();
-			List<LogEntry> currentLogsRead = gson.fromJson(json, collectionType);
-			currentLogs.clear();
-			currentLogs.addAll(currentLogsRead);
-		} catch (IOException e) {
-			//Ignore, a missing file is either an unmounted SD Card (unrecoverable) or a first-time run.
-		}
+	public void loadCurrentLogs(List<LogEntry> readLogs) {
+		currentLogs.clear();
+		currentLogs.addAll(readLogs);
+		this.showCurrentLogs();
 	}
 	
 	public void persistCurrentLogs() {
@@ -197,5 +189,49 @@ public class LogActivity extends Activity {
 		ScrollView scrollView = (ScrollView)findViewById(R.id.currentLogsScroll);
 		scrollView.fullScroll(View.FOCUS_DOWN);
 	}
+	
+	private static class PostTask extends AsyncTask<File, Void, List<LogEntry>> {
+
+    	private static ProgressDialog dialog;
+		private LogActivity act;
+
+
+		public PostTask(LogActivity act) {
+			 this.act = act;
+		}
+
+		@Override
+    	protected void onPreExecute() {
+    		super.onPreExecute();
+    		dialog = ProgressDialog.show(act, "hrf", "brf");
+    	}
+    	
+		@Override
+		protected List<LogEntry> doInBackground(File... params) {
+			File file=params[0];
+			
+			try {
+				String json = FileUtils.readFileToString(file, "UTF-8");
+				Gson gson = new GsonBuilder().setPrettyPrinting().create();
+				Log.d("IO", "Start Reading from " + file.getAbsolutePath() + "\n" + json);
+
+				Type collectionType = new TypeToken<Collection<LogEntry>>() {}.getType();
+				List<LogEntry> currentLogsRead = gson.fromJson(json, collectionType);
+				return currentLogsRead;			
+			} catch (IOException e) {
+				//Ignore, a missing file is either an unmounted SD Card (unrecoverable) or a first-time run.
+				return new ArrayList<LogEntry>();
+			}
+		
+		}    	
+    	
+    	@Override
+    	protected void onPostExecute(List<LogEntry> result) {
+    		super.onPostExecute(result);
+    		act.loadCurrentLogs(result);
+    		dialog.hide();
+    	}
+		
+    }
 
 }
