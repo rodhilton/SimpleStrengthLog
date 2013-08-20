@@ -1,8 +1,19 @@
 package com.nomachetejuggling.ssl;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
+import org.joda.time.LocalDate;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.LogEntry;
 
@@ -17,7 +28,16 @@ import android.view.View;
 import android.widget.NumberPicker;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.support.v4.app.NavUtils;
+
+
+//TODO: UI fix
+//TODO: load previous logs from file
+//TODO: save current logs to file
+//TODO: prepopulate spinners to last value
+//TODO: handle pause/resume
+//TODO: undo button to undo previously logged entry
 
 public class LogActivity extends Activity {	
 	
@@ -72,6 +92,9 @@ public class LogActivity extends Activity {
 		    ab.setTitle("Log");
 		    ab.setSubtitle(currentExercise.getName()); 
 		  }
+		
+		this.loadCurrentLogs();
+		this.showCurrentLogs();
 	}
 
 	/**
@@ -115,14 +138,57 @@ public class LogActivity extends Activity {
 		log.reps = (repsPicker.getValue()+1);
 		this.currentLogs.add(log);
 		
-		//String logEntry = ((weightPicker.getValue()+1)*5)+"x"+(repsPicker.getValue()+1);
+		this.persistCurrentLogs();
+	}
+	
+	public void loadCurrentLogs() {
+		File dir = Util.getLogStorageDir(this.getApplicationContext());
+		File file = new File(dir, new LocalDate().toString("yyyy-MM-dd")+".json");
+		
+		try {
+			String json = FileUtils.readFileToString(file, "UTF-8");
+			Gson gson = new GsonBuilder().setPrettyPrinting().create();
+			Log.d("IO", "Start Reading from " + file.getAbsolutePath() + "\n" + json);
+
+			Type collectionType = new TypeToken<Collection<LogEntry>>() {}.getType();
+			List<LogEntry> currentLogsRead = gson.fromJson(json, collectionType);
+			currentLogs.clear();
+			currentLogs.addAll(currentLogsRead);
+		} catch (IOException e) {
+			//Ignore, a missing file is either an unmounted SD Card (unrecoverable) or a first-time run.
+		}
+	}
+	
+	public void persistCurrentLogs() {
+		File dir = Util.getLogStorageDir(this.getApplicationContext());
+		File file = new File(dir, new LocalDate().toString("yyyy-MM-dd")+".json");
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+		String json = gson.toJson(currentLogs);
+		Log.d("IO", "Writing to " + file.getAbsolutePath() + "\n" + json);
+		try {
+			FileUtils.write(file, json, "UTF-8");
+		} catch(IOException e) {
+			Toast.makeText(
+		
+				getApplicationContext(), 
+				getString(R.string.error_cannot_save_log), 
+				Toast.LENGTH_SHORT).show();
+		}
+		
+		showCurrentLogs();
+	}
+
+	private void showCurrentLogs() {
 		StringBuilder sb = new StringBuilder();
 		for(int i=0;i<this.currentLogs.size();i++) {
 			LogEntry logEntry = this.currentLogs.get(i);
-			sb.append(logEntry.toString());
-			//if(i!=this.currentLogs.size()-1) {
-				sb.append("\n");
-			//}
+			if(logEntry.exercise.equals(currentExercise)) {
+				sb.append(logEntry.toString());
+				//if(i!=this.currentLogs.size()-1) {
+					sb.append("\n");
+				//}
+			}
 		}
 		
 		TextView currentLogs = (TextView)findViewById(R.id.currentLogsView);

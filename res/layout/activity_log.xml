@@ -30,6 +30,7 @@
             android:layout_height="wrap_content"
             android:onClick="logSet"
             android:text="@string/saveButton" />
+
     </TableRow>
 
     <TableRow

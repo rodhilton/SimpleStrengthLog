@@ -38,10 +38,12 @@ import android.widget.Toast;
 //TODO: handle rotation
 //TODO: Actual exercise logging
 //TODO: Favorite (part of long press menu, later a separate star)
+//TODO: load file in a thread, it can be pretty slow
 
 public class ExerciseListActivity extends Activity {
 	ExerciseAdapter exerciseAdapter;
 	ArrayList<Exercise> exercises;
+	boolean dirty;
 
 	static final int ADD_EXERCISE_REQUEST = 0;
 
@@ -69,6 +71,7 @@ public class ExerciseListActivity extends Activity {
 				startActivity(intent);
 			}
 		});
+		dirty=false;
 
 	}
 
@@ -106,6 +109,7 @@ public class ExerciseListActivity extends Activity {
 
 					exercises.add(newExercise);
 					exerciseAdapter.notifyDataSetChanged();
+					dirty=true;
 					saveExercises();
 				}
 			}
@@ -127,6 +131,8 @@ public class ExerciseListActivity extends Activity {
 	}
 
 	private void saveExercises() {
+		if(dirty==false) return;
+		
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
 		String json = gson.toJson(exercises);
@@ -140,6 +146,7 @@ public class ExerciseListActivity extends Activity {
 					getString(R.string.error_cannot_save_exercises), 
 					Toast.LENGTH_SHORT).show();
 		}
+		dirty=false;
 	}
 
 	private void loadExercises() {
