@@ -13,14 +13,13 @@ import android.util.Log;
 
 public class Util {
 
-	public static File getLogStorageDir(Context context, String albumName) {
-	    // Get the directory for the app's private pictures directory. 
-	    File file = new File(context.getExternalFilesDir(
-	            Environment.DIRECTORY_PICTURES), albumName);
-	    if (!file.mkdirs()) {
-	        Log.w("blahrg", "Directory not created");
+	public static File getLogStorageDir(Context context) {
+		File dir = Environment.getExternalStorageDirectory();
+		File myDir = new File(dir, "/SimpleHealthSuite/Strength/Logs");
+	    if (!myDir.mkdirs()) {
+	    	Log.w("Util", "Directory not created");
 	    }
-	    return file;
+	    return myDir;
 	}
 	
 	public static File getExerciseFile(Context context) {
