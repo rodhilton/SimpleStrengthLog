@@ -9,10 +9,13 @@
     tools:context=".AddActivity" >
 
     <TextView
-        android:id="@+id/exerciseName"
+        android:id="@+id/textView1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/exerciseNameLabel" />
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:text="@string/exerciseNameLabel"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
 
     <EditText
         android:id="@+id/nameText"
@@ -20,11 +23,33 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
-        android:layout_below="@+id/exerciseName"
+        android:layout_below="@+id/textView1"
         android:ems="10"
         android:maxLines="1" >
 
         <requestFocus />
     </EditText>
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/nameText"
+        android:layout_below="@+id/nameText"
+        android:paddingTop="@dimen/activity_vertical_margin"
+        android:text="@string/restTimeLabel"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <EditText
+        android:id="@+id/restTimeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/textView2"
+        android:layout_alignBottom="@+id/textView2"
+        android:layout_alignRight="@+id/nameText"
+        android:layout_toRightOf="@+id/textView2"
+        android:ems="10"
+        android:inputType="number" 
+        android:text="@string/restTimeDefault"/>
 
 </RelativeLayout>

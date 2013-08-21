@@ -13,6 +13,7 @@ import android.annotation.TargetApi;
 import android.content.Intent;
 import android.os.Build;
 
+//TODO: only allow up to a certain value for rest time.  
 public class AddActivity extends Activity {
 
 	@Override
@@ -55,9 +56,11 @@ public class AddActivity extends Activity {
 	
 	public void saveExercise() {
 		TextView nameText = (TextView) this.findViewById(R.id.nameText);
+		TextView restText = (TextView) this.findViewById(R.id.restTimeText);
 		
 		Exercise newExercise = new Exercise();
-		newExercise.setName(nameText.getText().toString());
+		newExercise.name=(nameText.getText().toString());
+		newExercise.restTime=Integer.parseInt(restText.getText().toString());
 		
 		Intent intent = new Intent();
 		intent.putExtra("newExercise",newExercise);

@@ -183,7 +183,7 @@ public class ExerciseListActivity extends Activity {
 			}
 			Exercise item = getItem(position);
 			TextView text = (TextView) row.findViewById(R.id.line1);
-			text.setText(item.getName());
+			text.setText(item.name);
 			return row;
 		}
 	}

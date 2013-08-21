@@ -15,5 +15,9 @@
     <string name="title_activity_log">Log</string>
     <string name="currentLogLabel">Current Logs:</string>
     <string name="previousLogLabel">Previous Logs:</string>
+    <string name="restTimeLabel">Rest Time (in seconds):</string>
+    <string name="restTimeDefault">90</string>
+    <string name="undoButtonLabel">Undo</string>
+    <string name="saveAndRestButtonLabel">Save &amp; Rest</string>
 
 </resources>
