@@ -68,7 +68,7 @@ public class LogActivity extends Activity {
 		setContentView(R.layout.activity_log);
 		// Show the Up button in the action bar.
 		setupActionBar();
-		getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		currentLogs = new ArrayList<LogEntry>();
 		resting=false;
 	}
