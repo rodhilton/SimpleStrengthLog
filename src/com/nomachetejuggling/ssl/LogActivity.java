@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.joda.time.LocalDate;
+import org.joda.time.Period;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -18,17 +19,28 @@ import com.google.gson.reflect.TypeToken;
 import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.LogEntry;
 
+import android.media.MediaPlayer;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.os.PowerManager;
+import android.os.Vibrator;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.NumberPicker;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,15 +49,18 @@ import android.support.v4.app.NavUtils;
 
 //TODO: UI fix
 //TODO: load previous logs from file
-//TODO: save current logs to file
 //TODO: prepopulate spinners to last value
 //TODO: handle pause/resume
 //TODO: undo button to undo previously logged entry
+//TODO: still loading kinda slow and sluggish.
+//TODO: "current logs"->"Today:", "previous logs"->"yesterday"|"2 days ago"|"last week"|"last month" etc, use joda
+//TODO: remove  android:configChanges
 
 public class LogActivity extends Activity {	
 	
 	private List<LogEntry> currentLogs;
 	private Exercise currentExercise;
+	private boolean resting;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +68,9 @@ public class LogActivity extends Activity {
 		setContentView(R.layout.activity_log);
 		// Show the Up button in the action bar.
 		setupActionBar();
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		currentLogs = new ArrayList<LogEntry>();
+		resting=false;
 	}
 	
 	@Override
@@ -93,7 +110,7 @@ public class LogActivity extends Activity {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 		    ActionBar ab = getActionBar();
 		    ab.setTitle("Log");
-		    ab.setSubtitle(currentExercise.getName()); 
+		    ab.setSubtitle(currentExercise.name); 
 		  }
 		
 		File dir = Util.getLogStorageDir(this.getApplicationContext());
@@ -142,7 +159,91 @@ public class LogActivity extends Activity {
 		log.reps = (repsPicker.getValue()+1);
 		this.currentLogs.add(log);
 		
+		this.persistCurrentLogs();		
+	}
+	
+	public void logSetAndRest(View view) {
+		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
+		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);	
+		
+		LogEntry log = new LogEntry();
+		log.exercise = currentExercise;
+		log.weight = ((weightPicker.getValue()+1)*5);
+		log.reps = (repsPicker.getValue()+1);
+		this.currentLogs.add(log);
+		
 		this.persistCurrentLogs();
+		
+		final ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
+		timerProgressBar.setMax(currentExercise.restTime);
+		timerProgressBar.setProgress(0);
+		
+		final Button saveButton = (Button) findViewById(R.id.saveButton);
+		final Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
+		final Button undoButton = (Button) findViewById(R.id.undoButton);
+		
+		saveButton.setEnabled(false);
+		saveAndRestButton.setText(currentExercise.restTime+"s");
+		saveAndRestButton.setEnabled(false);
+		undoButton.setEnabled(false);
+		timerProgressBar.setVisibility(View.VISIBLE);
+		this.resting=true;
+		
+		
+		new CountDownTimer(currentExercise.restTime*1000, 1000) {
+
+		     public void onTick(long millisUntilFinished) {
+		    	 if(!resting) {
+		    		 this.cancel();
+		    		 this.onFinish();
+		    	 }
+		    	 
+		    	 int secsLeft = (int) (millisUntilFinished/1000);
+		    	 timerProgressBar.setProgress(currentExercise.restTime-secsLeft);
+		    	 Period period = new Period(millisUntilFinished);
+		    	 
+		    	 saveAndRestButton.setText(String.format("%02d:%02d", period.getMinutes(), period.getSeconds()));
+		     }
+
+		     public void onFinish() {
+		    	 stopResting();
+		     }
+		  }.start();
+		
+	}
+	
+	private void stopResting() {
+		final ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
+		final Button saveButton = (Button) findViewById(R.id.saveButton);
+		final Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
+		final Button undoButton = (Button) findViewById(R.id.undoButton);
+		
+		timerProgressBar.setVisibility(View.INVISIBLE);
+		saveAndRestButton.setText(getString(R.string.saveAndRestButtonLabel));
+		
+   	 	saveButton.setEnabled(true);
+		saveAndRestButton.setEnabled(true);
+		undoButton.setEnabled(true);
+		this.resting=false;
+		
+		Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+		// Vibrate for 500 milliseconds
+		v.vibrate(500);
+		
+		MediaPlayer mPlayer = MediaPlayer.create(this.getApplicationContext(), R.raw.fight);
+//		mPlayer.setVolume(f, .4f);
+		mPlayer.start();
+	}
+	
+	@Override
+	public void onBackPressed() {
+		//This isnt working for some reason... press back and it kills the timer and stuff but the countdown keeps ticking
+//		if(resting) {
+//			resting=false;
+//		} else {
+//			super.onBackPressed();
+//		}
+		super.onBackPressed();
 	}
 	
 	public void loadCurrentLogs(List<LogEntry> readLogs) {

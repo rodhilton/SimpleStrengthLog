@@ -5,14 +5,12 @@ import java.io.Serializable;
 public class Exercise implements Serializable, Comparable<Exercise> {
 	private static final long serialVersionUID = -848012361873659700L;
 	
-	private String name;
+	public String name;
+	public int restTime;
 
 	public Exercise() {
 		
 	}
-
-	public String getName() { return name; }
-	public void setName(String name) { this.name = name; }
 	
 	@Override
 	public String toString() {
@@ -21,7 +19,7 @@ public class Exercise implements Serializable, Comparable<Exercise> {
 
 	@Override
 	public int compareTo(Exercise arg0) {
-		return this.getName().trim().toLowerCase().compareTo(arg0.getName().trim().toLowerCase());
+		return this.name.trim().toLowerCase().compareTo(arg0.name.trim().toLowerCase());
 	}
 	
 
