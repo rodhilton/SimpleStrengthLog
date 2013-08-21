@@ -14,6 +14,7 @@ import org.apache.commons.io.FileUtils;
 import org.joda.time.LocalDate;
 import org.joda.time.Period;
 import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -286,14 +287,23 @@ public class LogActivity extends Activity {
 			textView.setText(relative + ":");
 		}
 
-		// Start the pickers at the previous value
-		
-		//TODO: this is wrong.  if the current log entry is a DIFFERENT exercise, it won't load the right thing
 		LogEntry lastEntry = null;
 		if(currentLogs.size() > 0) {
-			lastEntry = currentLogs.get(currentLogs.size()-1);
-		} else if(previousLogs.size() > 0){
-			lastEntry = previousLogs.get(previousLogs.size()-1);
+			for(int i=currentLogs.size()-1;i>=0 && lastEntry == null;i--) {
+				LogEntry entry = currentLogs.get(i);
+				if(entry.exercise.name.equals(currentExercise.name)) {
+					lastEntry = entry;
+				}
+			}
+		} 
+		
+		if( lastEntry == null && previousLogs.size() > 0){
+			for(int i=previousLogs.size()-1;i>=0 && lastEntry == null;i--) {
+				LogEntry entry = previousLogs.get(i);
+				if(entry.exercise.name.equals(currentExercise.name)) {
+					lastEntry = entry;
+				}
+			}
 		}
 		
 		if(lastEntry != null) {
@@ -312,8 +322,7 @@ public class LogActivity extends Activity {
 
 	public void persistCurrentLogs() {
 		File dir = Util.getLogStorageDir(this.getApplicationContext());
-		File file = new File(dir, new LocalDate().toString("yyyy-MM-dd")
-				+ ".json");
+		File file = new File(dir, new LocalDate().toString("yyyy-MM-dd") + ".json");
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
 		String json = gson.toJson(currentLogs);
@@ -440,21 +449,8 @@ public class LogActivity extends Activity {
 			File dir = (File)params[1];
 			
 			String today = new LocalDate().toString("yyyy-MM-dd");
-			File file = new File(dir, today + ".json");
 
 			try {
-				String json = FileUtils.readFileToString(file, "UTF-8");
-				Gson gson = new GsonBuilder().setPrettyPrinting().create();
-				Log.d("IO", "Start Reading from " + file.getAbsolutePath()
-						+ "\n" + json);
-
-				Type collectionType = new TypeToken<Collection<LogEntry>>() {}.getType();
-				List<LogEntry> currentLogsRead = gson.fromJson(json,collectionType);
-
-				LogSet logSet = new LogSet();
-				logSet.currentLogs = currentLogsRead;
-
-				// Now search for previous log with this exercise
 				File[] files = dir.listFiles();
 
 				Arrays.sort(files, new Comparator<File>() {
@@ -462,18 +458,23 @@ public class LogActivity extends Activity {
 						return f2.getName().compareTo(f1.getName());
 					}
 				});
-
-				// Check the last 50 files to find one with entries for this
-				// exercise
+				
+				Gson gson = new GsonBuilder().setPrettyPrinting().create();
+				LogSet logSet = new LogSet();
+				Type collectionType = new TypeToken<Collection<LogEntry>>() {}.getType();
+				DateTimeFormatter pattern = DateTimeFormat.forPattern("yyyy-MM-dd");
+				
 				for (int i = 0; i < 50 && i < files.length && logSet.previousLogs.size() == 0; i++) {
-					File prevFile = files[i];
-					if (!prevFile.getName().equals(today + ".json")) {
-						String jsonPrev = FileUtils.readFileToString(files[i], "UTF-8");
-						List<LogEntry> prevLogsRead = gson.fromJson(jsonPrev,collectionType);
-						for (LogEntry entry : prevLogsRead) {
+					File file = files[i];
+					String json = FileUtils.readFileToString(file, "UTF-8");
+					List<LogEntry> logs = gson.fromJson(json,collectionType);
+					if (file.getName().equals(today + ".json")) {
+						logSet.currentLogs = logs;
+					} else {
+						for (LogEntry entry : logs) {
 							if (entry.exercise.name.equals(currentExercise.name)) {
-								logSet.previousLogs = prevLogsRead;
-								logSet.previousDate = LocalDate.parse(prevFile.getName().substring(0,10), DateTimeFormat.forPattern("yyyy-MM-dd"));
+								logSet.previousLogs = logs;
+								logSet.previousDate = LocalDate.parse(file.getName().substring(0,10), pattern);
 							}
 						}
 					}
@@ -483,6 +484,7 @@ public class LogActivity extends Activity {
 			} catch (IOException e) {
 				// Ignore, a missing file is either an unmounted SD Card
 				// (unrecoverable) or a first-time run.
+				Log.e("IO", "Problem", e);
 				return new LogSet();
 			}
 
