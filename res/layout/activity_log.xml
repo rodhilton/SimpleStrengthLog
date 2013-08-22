@@ -103,7 +103,7 @@
 
                 <TextView
                     android:id="@+id/currentLogsView"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:scrollbars="vertical" />
             </ScrollView>
@@ -116,24 +116,24 @@
             android:orientation="vertical" >
 
             <TextView
-                android:id="@+id/textView3"
+                android:id="@+id/previousLogLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="right"
                 android:text="@string/previousLogLabel"
                 android:textAlignment="textEnd"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <ScrollView
+                android:id="@+id/previousLogsScroll"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent" >
 
                 <TextView
                     android:id="@+id/previousLogsView"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="right"
                     android:scrollbars="vertical" />
+
             </ScrollView>
         </LinearLayout>
     </LinearLayout>

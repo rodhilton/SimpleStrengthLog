@@ -13,8 +13,8 @@
     <string name="error_cannot_save_exercises">Unable to save exercises, SD card not mounted or unwritable.</string>
     <string name="error_cannot_save_log">Unable to save log, SD card not mounted or unwritable.</string>
     <string name="title_activity_log">Log</string>
-    <string name="currentLogLabel">Current Logs:</string>
-    <string name="previousLogLabel">Previous Logs:</string>
+    <string name="currentLogLabel">Today:</string>
+    <string name="previousLogLabel">Previously:</string>
     <string name="restTimeLabel">Rest Time (in seconds):</string>
     <string name="restTimeDefault">90</string>
     <string name="undoButtonLabel">Undo</string>
