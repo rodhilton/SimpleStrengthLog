@@ -195,13 +195,13 @@ public class LogActivity extends Activity {
 
 		this.persistCurrentLogs();
 
-		final ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
+		ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
 		timerProgressBar.setMax(currentExercise.restTime);
 		timerProgressBar.setProgress(0);
 
-		final Button saveButton = (Button) findViewById(R.id.saveButton);
-		final Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
-		final Button undoButton = (Button) findViewById(R.id.undoButton);
+		Button saveButton = (Button) findViewById(R.id.saveButton);
+		Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
+		Button undoButton = (Button) findViewById(R.id.undoButton);
 
 		saveButton.setEnabled(false);
 		saveAndRestButton.setText(currentExercise.restTime + "s");
@@ -219,10 +219,12 @@ public class LogActivity extends Activity {
 				}
 
 				int secsLeft = (int) (millisUntilFinished / 1000);
+				ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
 				timerProgressBar.setProgress(currentExercise.restTime
 						- secsLeft);
 				Period period = new Period(millisUntilFinished);
 
+				Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
 				saveAndRestButton.setText(String.format("%02d:%02d",
 						period.getMinutes(), period.getSeconds()));
 			}
@@ -285,6 +287,8 @@ public class LogActivity extends Activity {
 		}
 
 		// Start the pickers at the previous value
+		
+		//TODO: this is wrong.  if the current log entry is a DIFFERENT exercise, it won't load the right thing
 		LogEntry lastEntry = null;
 		if(currentLogs.size() > 0) {
 			lastEntry = currentLogs.get(currentLogs.size()-1);
@@ -334,7 +338,7 @@ public class LogActivity extends Activity {
 
 		// int
 		// currentTextColor=getResources().getColor(R.color.currentLogEntry);
-		sb.append("<br/><font color='#aaaaaa'><i>" + formatEntry(currentEntry)+ "</i></font>");
+		sb.append("<font color='#aaaaaa'><i>" + formatEntry(currentEntry)+ "</i></font>");
 
 		TextView currentLogs = (TextView) findViewById(R.id.currentLogsView);
 		currentLogs.setText(Html.fromHtml(sb.toString()));
@@ -363,7 +367,7 @@ public class LogActivity extends Activity {
 	
 	private String formatEntry(LogEntry entry) {
 		int oneRM=entry.oneRepMax();
-		return ""+entry.weight+"x"+entry.reps+" &nbsp; (1RM="+oneRM+")";
+		return ""+entry.weight+"x"+entry.reps+" &nbsp; <small>(1RM="+oneRM+")</small>";
 	}
 
 	private StringBuilder builderForLogs(List<LogEntry> logs) {
