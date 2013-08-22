@@ -9,10 +9,8 @@ public class LogEntry implements Serializable {
 	public int weight;
 	public int reps;
 	
-	@Override
-	public String toString() {
-		int oneRM=(int)(((weight*reps)/30.0)+weight);
-		return weight+"x"+reps+" (1RM="+oneRM+")";
+	public int oneRepMax() {
+		return (int)(((weight*reps)/30.0)+weight);
 	}
 
 }

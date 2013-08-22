@@ -43,19 +43,19 @@ public class Util {
 		if (years > 1) {
 			return years + " Years Ago";
 		} else if (years == 1) {
-			return "Last Year";
+			return "One Year Ago";
 		} else {
 			int months = Months.monthsBetween(previousDate, today).getMonths();
 			if (months > 1) {
 				return months + " Months Ago";
 			} else if (months == 1) {
-				return "Last Month";
+				return "1 Month Ago";
 			} else {
 				int weeks = Weeks.weeksBetween(previousDate, today).getWeeks();
 				if (weeks > 1) {
 					return weeks + " Weeks Ago";
 				} else if (weeks == 1) {
-					return "Last Week";
+					return "1 Week Ago";
 				} else {
 					int days = Days.daysBetween(previousDate, today).getDays();
 					if (days > 1) {
