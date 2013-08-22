@@ -34,11 +34,16 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+//TODO: tagging of exercises by muscle
+//TODO: filtering of list by muscle GROUP
 //TODO: Long press to Edit/Delete exercise
-//TODO: handle rotation
-//TODO: Actual exercise logging
 //TODO: Favorite (part of long press menu, later a separate star)
 //TODO: load file in a thread, it can be pretty slow
+//TODO: only store exercise name in logs
+//TODO: default file of exercises (must have favorite feature first)
+//TODO: make add a dialog, not an activity.  This may prevent issues with activity resume/pause
+//TODO: "workout summary" feature with all of current day's stuff.  datepicker for other dates.
+//TODO: (maybe) full historical record for an exercise to see improvement.  should this be part of larger suite?
 
 public class ExerciseListActivity extends Activity {
 	ExerciseAdapter exerciseAdapter;
