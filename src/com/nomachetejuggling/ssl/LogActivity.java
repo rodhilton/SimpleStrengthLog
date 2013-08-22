@@ -128,8 +128,10 @@ public class LogActivity extends Activity {
 			ab.setTitle("Log");
 			ab.setSubtitle(currentExercise.name);
 		}
-
-		new PostTask(this).execute(currentExercise);
+		
+		File dir = Util.getLogStorageDir(getApplicationContext());
+		
+		new PostTask(this).execute(currentExercise, dir);
 	}
 
 	/**
@@ -332,8 +334,7 @@ public class LogActivity extends Activity {
 
 		// int
 		// currentTextColor=getResources().getColor(R.color.currentLogEntry);
-		sb.append("<font color='#bbbbbb'>" + currentEntry.toString()
-				+ "</font>");
+		sb.append("<br/><font color='#aaaaaa'><i>" + formatEntry(currentEntry)+ "</i></font>");
 
 		TextView currentLogs = (TextView) findViewById(R.id.currentLogsView);
 		currentLogs.setText(Html.fromHtml(sb.toString()));
@@ -359,14 +360,23 @@ public class LogActivity extends Activity {
 		});
 
 	}
+	
+	private String formatEntry(LogEntry entry) {
+		int oneRM=entry.oneRepMax();
+		return ""+entry.weight+"x"+entry.reps+" &nbsp; (1RM="+oneRM+")";
+	}
 
 	private StringBuilder builderForLogs(List<LogEntry> logs) {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < logs.size(); i++) {
 			LogEntry logEntry = logs.get(i);
 			if (logEntry.exercise.equals(currentExercise)) {
-				sb.append(logEntry.toString());
-				sb.append("<br/>");
+				if(i==logs.size()-1) {
+					sb.append(formatEntry(logEntry));
+				} else {
+					sb.append(formatEntry(logEntry));
+					sb.append("<br/>");
+				}
 			}
 		}
 		return sb;
@@ -389,10 +399,8 @@ public class LogActivity extends Activity {
 		super.onRestoreInstanceState(savedInstanceState);
 		// Restore UI state from the savedInstanceState.
 		// This bundle has also been passed to onCreate.
-		int weightPickerPosition = savedInstanceState
-				.getInt("WeightPickerPosition");
-		int repsPickerPosition = savedInstanceState
-				.getInt("RepsPickerPosition");
+		int weightPickerPosition = savedInstanceState.getInt("WeightPickerPosition");
+		int repsPickerPosition = savedInstanceState.getInt("RepsPickerPosition");
 
 		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
 		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
@@ -407,9 +415,9 @@ public class LogActivity extends Activity {
 		public LocalDate previousDate = null;
 	}
 
-	private class PostTask extends AsyncTask<Exercise, Void, LogSet> {
+	private static class PostTask extends AsyncTask<Object, Void, LogSet> {
 
-		private ProgressDialog dialog;
+		private static ProgressDialog dialog;
 		private LogActivity act;
 
 		public PostTask(LogActivity act) {
@@ -423,9 +431,11 @@ public class LogActivity extends Activity {
 		}
 
 		@Override
-		protected LogSet doInBackground(Exercise... params) {
+		protected LogSet doInBackground(Object... params) {
+			Exercise currentExercise = (Exercise)params[0];
+			File dir = (File)params[1];
+			
 			String today = new LocalDate().toString("yyyy-MM-dd");
-			File dir = Util.getLogStorageDir(getApplicationContext());
 			File file = new File(dir, today + ".json");
 
 			try {
@@ -434,10 +444,8 @@ public class LogActivity extends Activity {
 				Log.d("IO", "Start Reading from " + file.getAbsolutePath()
 						+ "\n" + json);
 
-				Type collectionType = new TypeToken<Collection<LogEntry>>() {
-				}.getType();
-				List<LogEntry> currentLogsRead = gson.fromJson(json,
-						collectionType);
+				Type collectionType = new TypeToken<Collection<LogEntry>>() {}.getType();
+				List<LogEntry> currentLogsRead = gson.fromJson(json,collectionType);
 
 				LogSet logSet = new LogSet();
 				logSet.currentLogs = currentLogsRead;
@@ -453,22 +461,15 @@ public class LogActivity extends Activity {
 
 				// Check the last 50 files to find one with entries for this
 				// exercise
-				for (int i = 0; i < 50 && logSet.previousLogs.size() == 0; i++) {
+				for (int i = 0; i < 50 && i < files.length && logSet.previousLogs.size() == 0; i++) {
 					File prevFile = files[i];
 					if (!prevFile.getName().equals(today + ".json")) {
-						String jsonPrev = FileUtils.readFileToString(files[i],
-								"UTF-8");
-						List<LogEntry> prevLogsRead = gson.fromJson(jsonPrev,
-								collectionType);
+						String jsonPrev = FileUtils.readFileToString(files[i], "UTF-8");
+						List<LogEntry> prevLogsRead = gson.fromJson(jsonPrev,collectionType);
 						for (LogEntry entry : prevLogsRead) {
-							if (entry.exercise.name
-									.equals(currentExercise.name)) {
+							if (entry.exercise.name.equals(currentExercise.name)) {
 								logSet.previousLogs = prevLogsRead;
-								logSet.previousDate = LocalDate
-										.parse(prevFile.getName().substring(0,
-												10), DateTimeFormat
-												.forPattern("yyyy-MM-dd"));
-								continue;
+								logSet.previousDate = LocalDate.parse(prevFile.getName().substring(0,10), DateTimeFormat.forPattern("yyyy-MM-dd"));
 							}
 						}
 					}

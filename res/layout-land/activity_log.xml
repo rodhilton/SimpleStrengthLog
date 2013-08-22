@@ -122,7 +122,6 @@
                     android:id="@+id/previousLogLabel"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/previousLogLabel"
                     android:textAlignment="textEnd"
                     android:textAppearance="?android:attr/textAppearanceSmall" />
 
