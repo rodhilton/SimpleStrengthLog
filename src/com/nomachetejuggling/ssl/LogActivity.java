@@ -52,30 +52,27 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.support.v4.app.NavUtils;
 
-//TODO: prepopulate spinners to last value
 //TODO: handle pause/resume
-//TODO: undo button to undo previously logged entry
-//TODO: still loading kinda slow and sluggish.
+//TODO: undo button to undo previously logged entry (only if it was this exercise, and button should only be active if it will actually work, so disabled until a 'save', and enabled after the save.  after clicking undo
+//   it should check if the head of the list is still the current exercise and, if not, still disable.
+//TODO: clean this code up, lots of duplication
+//TODO format the 'current' item via tunable colors, not hardcoded
 
 public class LogActivity extends Activity {
 
 	private List<LogEntry> currentLogs = null;
 	private List<LogEntry> previousLogs = null;
 	private Exercise currentExercise;
-	private boolean resting;
-	private String previousFileName = null;
+	private CountDownTimer restTimer;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_log);
-		// Show the Up button in the action bar.
 		setupActionBar();
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		currentLogs = new ArrayList<LogEntry>();
 		previousLogs = new ArrayList<LogEntry>();
-
-		resting = false;
 	}
 
 	@Override
@@ -209,16 +206,10 @@ public class LogActivity extends Activity {
 		saveAndRestButton.setEnabled(false);
 		undoButton.setEnabled(false);
 		timerProgressBar.setVisibility(View.VISIBLE);
-		this.resting = true;
 
-		new CountDownTimer(currentExercise.restTime * 1000, 1000) {
+		this.restTimer = new CountDownTimer(currentExercise.restTime * 1000, 1000) {
 
 			public void onTick(long millisUntilFinished) {
-				if (!resting) {
-					this.cancel();
-					this.onFinish();
-				}
-
 				int secsLeft = (int) (millisUntilFinished / 1000);
 				ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
 				timerProgressBar.setProgress(currentExercise.restTime
@@ -231,13 +222,14 @@ public class LogActivity extends Activity {
 			}
 
 			public void onFinish() {
-				stopResting();
+				stopResting(false);
 			}
-		}.start();
-
+		};
+		
+		this.restTimer.start();
 	}
 
-	private void stopResting() {
+	private void stopResting(boolean cancelled) {
 		final ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
 		final Button saveButton = (Button) findViewById(R.id.saveButton);
 		final Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
@@ -249,28 +241,28 @@ public class LogActivity extends Activity {
 		saveButton.setEnabled(true);
 		saveAndRestButton.setEnabled(true);
 		undoButton.setEnabled(true);
-		this.resting = false;
-
-		Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-		// Vibrate for 500 milliseconds
-		v.vibrate(500);
-
-		MediaPlayer mPlayer = MediaPlayer.create(this.getApplicationContext(),
-				R.raw.fight);
-		// mPlayer.setVolume(f, .4f);
-		mPlayer.start();
+		
+		if(!cancelled) {	
+			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+			// Vibrate for 500 milliseconds
+			v.vibrate(500);
+	
+			MediaPlayer mPlayer = MediaPlayer.create(this.getApplicationContext(),
+					R.raw.fight);
+			mPlayer.setVolume(.7f, .7f);
+			mPlayer.start();
+		}
 	}
 
 	@Override
 	public void onBackPressed() {
-		// This isnt working for some reason... press back and it kills the
-		// timer and stuff but the countdown keeps ticking
-		// if(resting) {
-		// resting=false;
-		// } else {
-		// super.onBackPressed();
-		// }
-		super.onBackPressed();
+		if(this.restTimer != null) {
+			this.restTimer.cancel();
+			this.restTimer = null;
+			stopResting(true);
+		} else {
+			super.onBackPressed();
+		}
 	}
 
 	public void loadCurrentLogs(LogSet logSet) {
@@ -347,7 +339,7 @@ public class LogActivity extends Activity {
 
 		// int
 		// currentTextColor=getResources().getColor(R.color.currentLogEntry);
-		sb.append("<font color='#aaaaaa'><i>" + formatEntry(currentEntry)+ "</i></font>");
+		sb.append("<br/><font color='#aaaaaa'><i>" + formatEntry(currentEntry)+ "</i></font>");
 
 		TextView currentLogs = (TextView) findViewById(R.id.currentLogsView);
 		currentLogs.setText(Html.fromHtml(sb.toString()));
@@ -405,6 +397,10 @@ public class LogActivity extends Activity {
 		savedInstanceState.putInt("WeightPickerPosition",
 				weightPicker.getValue());
 		savedInstanceState.putInt("RepsPickerPosition", repsPicker.getValue());
+		
+		if(this.restTimer != null) {
+			restTimer.cancel();
+		}
 	}
 
 	@Override
@@ -482,8 +478,6 @@ public class LogActivity extends Activity {
 
 				return logSet;
 			} catch (IOException e) {
-				// Ignore, a missing file is either an unmounted SD Card
-				// (unrecoverable) or a first-time run.
 				Log.e("IO", "Problem", e);
 				return new LogSet();
 			}
