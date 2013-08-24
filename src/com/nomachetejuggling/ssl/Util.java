@@ -95,7 +95,7 @@ public class Util {
 		}
 	}
 
-	public static String combine(String[] s, String separator, String ifEmpty)
+	public static String join(String[] s, String separator, String ifEmpty)
 	{
 	  if (s.length==0) return ifEmpty;
 	

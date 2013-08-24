@@ -1,0 +1,10 @@
+<MuscleGroups>
+	<MuscleGroup name="Legs">
+		<Muscle>Quadriceps</Muscle>
+		<Muscle>Gluteals</Muscle>
+	</MuscleGroup>
+	<MuscleGroup name="Torso">
+		<Muscle>Pectorals</Muscle>
+		<Muscle>Abs</Muscle>
+	</MuscleGroup>
+</MuscleGroups>
