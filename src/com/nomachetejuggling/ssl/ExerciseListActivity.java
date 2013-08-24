@@ -3,12 +3,15 @@ package com.nomachetejuggling.ssl;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 
@@ -16,11 +19,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.nomachetejuggling.ssl.model.Exercise;
+import com.nomachetejuggling.ssl.model.MuscleGroups;
 
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -30,7 +35,9 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.NumberPicker;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,6 +57,8 @@ public class ExerciseListActivity extends Activity {
 	ExerciseAdapter exerciseAdapter;
 	ArrayList<Exercise> exercises;
 	boolean dirty;
+	
+	MuscleGroups muscleGroups;
 
 	static final int ADD_EXERCISE_REQUEST = 0;
 
@@ -63,7 +72,7 @@ public class ExerciseListActivity extends Activity {
 
 		listView.setEmptyView(findViewById(android.R.id.empty));
 
-		exerciseAdapter = new ExerciseAdapter(this, R.layout.list_exercises, R.id.line1, exercises);
+		exerciseAdapter = new ExerciseAdapter(this, R.layout.list_exercises, R.id.exerciseName, exercises);
 		listView.setAdapter(exerciseAdapter);
 		
 		listView.setOnItemClickListener(new OnItemClickListener()
@@ -79,6 +88,7 @@ public class ExerciseListActivity extends Activity {
 		});
 		dirty=false;
 
+		this.muscleGroups = Util.loadMuscleGroups(getResources());
 	}
 
 	@Override
@@ -92,8 +102,9 @@ public class ExerciseListActivity extends Activity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.add_exercise:
-			startActivityForResult(new Intent(this, AddActivity.class),
-					ADD_EXERCISE_REQUEST);
+			Intent intent = new Intent(this, AddActivity.class);
+			intent.putExtra("muscles", this.muscleGroups.getMuscles().toArray(new String[]{}));
+			startActivityForResult(intent, ADD_EXERCISE_REQUEST);
 			return true;
 		case R.id.action_settings:
 			startActivity(new Intent(this, SettingsActivity.class));
@@ -110,8 +121,7 @@ public class ExerciseListActivity extends Activity {
 			if (resultCode == RESULT_OK) {
 				Bundle extras = intent.getExtras();
 				if (extras != null) {
-					Exercise newExercise = (Exercise) extras
-							.getSerializable("newExercise");
+					Exercise newExercise = (Exercise) extras.getSerializable("newExercise");
 					Log.i("newExercise", newExercise.toString());
 
 					exercises.add(newExercise);
@@ -121,6 +131,18 @@ public class ExerciseListActivity extends Activity {
 				}
 			}
 		}
+	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+		super.onSaveInstanceState(savedInstanceState);
+		savedInstanceState.putSerializable("muscleGroups", this.muscleGroups);
+	}
+
+	@Override
+	public void onRestoreInstanceState(Bundle savedInstanceState) {
+		super.onRestoreInstanceState(savedInstanceState);
+		this.muscleGroups = (MuscleGroups)savedInstanceState.getSerializable("muscleGroups");
 	}
 
 	@Override
@@ -189,8 +211,9 @@ public class ExerciseListActivity extends Activity {
 						R.layout.list_exercises, parent, false);
 			}
 			Exercise item = getItem(position);
-			TextView text = (TextView) row.findViewById(R.id.line1);
+			TextView text = (TextView) row.findViewById(R.id.exerciseName);
 			text.setText(item.name);
+			Log.i("BLAH", Util.combine(item.muscles, ",", ""));
 			return row;
 		}
 	}

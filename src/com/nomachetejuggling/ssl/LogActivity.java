@@ -6,15 +6,16 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.joda.time.LocalDate;
+import org.joda.time.LocalTime;
 import org.joda.time.Period;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -24,14 +25,10 @@ import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.LogEntry;
 
 import android.media.MediaPlayer;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.PowerManager;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.app.ActionBar;
@@ -82,11 +79,7 @@ public class LogActivity extends Activity {
         
 		currentLogs = new ArrayList<LogEntry>();
 		previousLogs = new ArrayList<LogEntry>();
-	}
-
-	@Override
-	protected void onStart() {
-		super.onStart();
+		
 		currentExercise = (Exercise) getIntent().getExtras().getSerializable("exercise");
 		Log.i("LogActivity", "Exercise: " + currentExercise.toString());
 
@@ -137,7 +130,13 @@ public class LogActivity extends Activity {
 		
 		File dir = Util.getLogStorageDir(getApplicationContext());
 		
-		new PostTask(this).execute(currentExercise, dir);
+		new LoadLogsTask(this).execute(currentExercise, dir);
+	}
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+		
 	}
 
 	/**
@@ -166,6 +165,9 @@ public class LogActivity extends Activity {
 			// http://developer.android.com/design/patterns/navigation.html#up-vs-back
 			//
 			NavUtils.navigateUpFromSameTask(this);
+			if(this.restTimer != null) {
+				this.restTimer.cancel();
+			}
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
@@ -199,9 +201,10 @@ public class LogActivity extends Activity {
 		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
 
 		LogEntry log = new LogEntry();
-		log.exercise = currentExercise;
+		log.exercise = currentExercise.name;
 		log.weight = ((weightPicker.getValue() + 1) * 5);
 		log.reps = (repsPicker.getValue() + 1);
+		log.time = new LocalTime().toString(ISODateTimeFormat.time());
 		return log;
 	}
 
@@ -259,7 +262,7 @@ public class LogActivity extends Activity {
 		
 		if(!cancelled) {	
 			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-			v.vibrate(500);
+			v.vibrate(new long[]{160, 228, 13,228, 13,228, 13,228, 13,228}, -1);
 	
 			MediaPlayer mPlayer = MediaPlayer.create(this.getApplicationContext(),
 					R.raw.fight);
@@ -297,7 +300,7 @@ public class LogActivity extends Activity {
 		if(currentLogs.size() > 0) {
 			for(int i=currentLogs.size()-1;i>=0 && lastEntry == null;i--) {
 				LogEntry entry = currentLogs.get(i);
-				if(entry.exercise.name.equals(currentExercise.name)) {
+				if(entry.exercise.equals(currentExercise.name)) {
 					lastEntry = entry;
 				}
 			}
@@ -306,7 +309,7 @@ public class LogActivity extends Activity {
 		if( lastEntry == null && previousLogs.size() > 0){
 			for(int i=previousLogs.size()-1;i>=0 && lastEntry == null;i--) {
 				LogEntry entry = previousLogs.get(i);
-				if(entry.exercise.name.equals(currentExercise.name)) {
+				if(entry.exercise.equals(currentExercise.name)) {
 					lastEntry = entry;
 				}
 			}
@@ -390,7 +393,7 @@ public class LogActivity extends Activity {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < logs.size(); i++) {
 			LogEntry logEntry = logs.get(i);
-			if (logEntry.exercise.equals(currentExercise)) {
+			if (logEntry.exercise.equals(currentExercise.name)) {
 				sb.append(formatEntry(logEntry));
 			}
 		}
@@ -445,12 +448,12 @@ public class LogActivity extends Activity {
 		public LocalDate previousDate = null;
 	}
 
-	private static class PostTask extends AsyncTask<Object, Void, LogSet> {
+	private static class LoadLogsTask extends AsyncTask<Object, Void, LogSet> {
 
 		private static ProgressDialog dialog;
 		private LogActivity act;
 
-		public PostTask(LogActivity act) {
+		public LoadLogsTask(LogActivity act) {
 			this.act = act;
 		}
 
@@ -489,7 +492,7 @@ public class LogActivity extends Activity {
 						logSet.currentLogs = logs;
 					} else {
 						for (LogEntry entry : logs) {
-							if (entry.exercise.name.equals(currentExercise.name)) {
+							if (entry.exercise.equals(currentExercise.name)) {
 								logSet.previousLogs = logs;
 								logSet.previousDate = LocalDate.parse(file.getName().substring(0,10), pattern);
 							}

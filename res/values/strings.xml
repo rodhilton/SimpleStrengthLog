@@ -15,7 +15,7 @@
     <string name="title_activity_log">Log</string>
     <string name="currentLogLabel">Today:</string>
     <string name="previousLogLabel">Previously:</string>
-    <string name="restTimeLabel">Rest Time (in seconds):</string>
+    <string name="restTimeLabel">Seconds between sets:</string>
     <string name="restTimeDefault">90</string>
     <string name="undoButtonLabel">Undo</string>
     <string name="saveAndRestButtonLabel">Save &amp; Rest</string>
@@ -26,5 +26,7 @@
         <item>Quadriceps</item>
         <item>Shoulders</item>
     </string-array>
+        <string name="exerciseNameHint">Exercise Name</string>
+        <string name="setTagsButton">Set Muscles</string>
 
 </resources>

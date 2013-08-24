@@ -1,64 +1,96 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
+        android:id="@+id/scrollView1"     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".AddActivity" >
+    tools:context=".AddActivity">
 
-    <TextView
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+            <!--  <TextView
         android:id="@+id/textView1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
         android:text="@string/exerciseNameLabel"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
+        android:textAppearance="?android:attr/textAppearanceMedium" /> -->
 
     <EditText
         android:id="@+id/nameText"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
-        android:layout_below="@+id/textView1"
-        android:ems="10"
+        android:hint="@string/exerciseNameHint"
+        android:inputType="text|textCapWords"
         android:maxLines="1" >
 
         <requestFocus />
     </EditText>
 
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/nameText"
-        android:layout_below="@+id/nameText"
-        android:paddingTop="@dimen/activity_vertical_margin"
-        android:text="@string/restTimeLabel"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
+        android:paddingTop="@dimen/activity_vertical_margin" >
 
-    <EditText
-        android:id="@+id/restTimeText"
-        android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="@dimen/activity_vertical_margin"
+            android:text="@string/restTimeLabel"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+         <!--  <EditText
+             android:id="@+id/restTimeText"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_alignBaseline="@+id/textView2"
+             android:layout_alignBottom="@+id/textView2"
+             android:layout_alignParentRight="true"
+             android:layout_toRightOf="@+id/textView2"
+             android:ems="10"
+             android:gravity="center_vertical|right"
+             android:inputType="number|text"
+             android:singleLine="true"
+             android:text="@string/restTimeDefault" />-->
+
+         <EditText
+            android:id="@+id/restTimeText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignBottom="@+id/textView2"
+            android:layout_alignBaseline="@+id/textView2"
+            android:layout_toRightOf="@+id/textView2"
+            android:ems="10"
+            android:inputType="number" 
+            android:gravity="center_vertical|right"
+             android:singleLine="true"
+             android:text="@string/restTimeDefault"/>
+
+    </RelativeLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/textView2"
-        android:layout_alignBottom="@+id/textView2"
-        android:layout_alignRight="@+id/nameText"
-        android:layout_toRightOf="@+id/textView2"
-        android:ems="10"
-        android:inputType="number" 
-        android:text="@string/restTimeDefault"/>
+        android:paddingTop="@dimen/activity_vertical_margin" >
 
-    <Button
-        android:id="@+id/button1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/textView2"
-        android:layout_below="@+id/restTimeText"
-        android:text="Button" 
-        android:onClick="clickTags"/>
+        <Button
+            android:id="@+id/musclesButton"
+            style="?android:attr/buttonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="clickTags"
+            android:text="@string/setTagsButton" />
 
-</RelativeLayout>
+    </FrameLayout>
+
+        </LinearLayout>
+    </ScrollView>
+    
+
+ 

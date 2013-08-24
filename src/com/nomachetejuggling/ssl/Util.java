@@ -1,7 +1,13 @@
 package com.nomachetejuggling.ssl;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.joda.time.Days;
 import org.joda.time.LocalDate;
@@ -11,9 +17,13 @@ import org.joda.time.Years;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.nomachetejuggling.ssl.model.Exercise;
+import com.nomachetejuggling.ssl.model.MuscleGroups;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.content.res.Resources.NotFoundException;
 import android.os.Environment;
 import android.util.Log;
 
@@ -68,6 +78,34 @@ public class Util {
 				}
 			}
 		}
+	}
+
+	public static MuscleGroups loadMuscleGroups(Resources resources) {
+		Gson gson=new Gson(); 
+		Type type = new TypeToken<Map<String, List<String>>>(){}.getType();
+		try {
+			InputStream stream = resources.openRawResource(R.raw.muscles);
+		
+			Map<String, List<String>> myMap = gson.fromJson(new InputStreamReader(stream), type);
+		
+			return new MuscleGroups(myMap);
+		} catch(NotFoundException e) {
+			Log.e("IO", "Somehow the raw resource couldn't be found...", e);
+			return new MuscleGroups(new HashMap<String, List<String>>());
+		}
+	}
+
+	public static String combine(String[] s, String separator, String ifEmpty)
+	{
+	  if (s.length==0) return ifEmpty;
+	
+	  StringBuilder out=new StringBuilder();
+	  out.append(s[0]);
+	
+	  for (int x=1;x<s.length;++x)
+	    out.append(separator).append(s[x]);
+	
+	  return out.toString();
 	}
 
 }
