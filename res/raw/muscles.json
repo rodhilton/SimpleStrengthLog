@@ -1,0 +1,8 @@
+{
+	"Arms": ["Triceps", "Biceps", "Forearms", "Wrist"],
+	"Legs": ["Quadriceps", "Gluteals", "Hamstrings", "Thighs", "Calfs"],
+	"Back": ["Latissmus Dorsi", "Teres Major", "Erector Spinae", "Trapezius"],
+	"Chest": ["Pectorals"],
+	"Shoulders": ["Deltoids", "Infraspinatus"],
+	"Core": ["Abdominals", "Obliques"]
+}

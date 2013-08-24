@@ -7,6 +7,7 @@ public class Exercise implements Serializable, Comparable<Exercise> {
 	
 	public String name;
 	public int restTime;
+	public String[] muscles = new String[]{};
 
 	public Exercise() {
 		

@@ -1,6 +1,7 @@
 package com.nomachetejuggling.ssl;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.nomachetejuggling.ssl.model.Exercise;
 
@@ -11,6 +12,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.support.v4.app.NavUtils;
 import android.annotation.TargetApi;
@@ -18,15 +20,29 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 
-//TODO: only allow up to a certain value for rest time.  
+//TODO: only allow up to a certain value for rest time.
+//TODO: basic validation.  non-empty name, min and max vals for rest time, no negs
+
 public class AddActivity extends Activity {
+	
+	private String[] availableMuscles;
+	private String[] currentMuscles;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_add);
-		// Show the Up button in the action bar.
 		setupActionBar();
+	
+		availableMuscles = getIntent().getExtras().getStringArray("muscles");
+		
+		if(savedInstanceState != null) {
+			if(savedInstanceState.containsKey("currentMuscles")) {
+				currentMuscles = savedInstanceState.getStringArray("currentMuscles");
+			} else {
+				currentMuscles = new String[]{};
+			}
+		}
 	}
 
 	/**
@@ -59,6 +75,12 @@ public class AddActivity extends Activity {
 		return super.onOptionsItemSelected(item);
 	}
 	
+	@Override
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+		super.onSaveInstanceState(savedInstanceState);
+		savedInstanceState.putSerializable("currentMuscles", this.currentMuscles);
+	}
+	
 	public void saveExercise() {
 		TextView nameText = (TextView) this.findViewById(R.id.nameText);
 		TextView restText = (TextView) this.findViewById(R.id.restTimeText);
@@ -66,6 +88,7 @@ public class AddActivity extends Activity {
 		Exercise newExercise = new Exercise();
 		newExercise.name=(nameText.getText().toString());
 		newExercise.restTime=Integer.parseInt(restText.getText().toString());
+		newExercise.muscles = this.currentMuscles;
 		
 		Intent intent = new Intent();
 		intent.putExtra("newExercise",newExercise);
@@ -73,39 +96,40 @@ public class AddActivity extends Activity {
 		finish();	
 	}
 	
+	private void setCurrentMuscles(List<String> muscles) {
+    	currentMuscles = muscles.toArray(new String[]{});
+    	
+    	Button musclesButton = (Button) findViewById(R.id.musclesButton);
+    	musclesButton.setText(Util.combine(currentMuscles, ", ", getString(R.string.setTagsButton)));
+	}
+	
 	public void clickTags(View view) {
-		final String items[] = {"Movie","Music","Book"};
 		
-		final ArrayList<Integer> mSelectedItems = new ArrayList();  // Where we track the selected items
+		final ArrayList<String> mSelectedMuscles = new ArrayList<String>();
 		
 		AlertDialog.Builder ab = new AlertDialog.Builder(this);
-		ab.setTitle("Choose Tags");
-		ab.setMultiChoiceItems(R.array.musclegroups, null, new DialogInterface.OnMultiChoiceClickListener() {
+		ab.setTitle("Select Muscles Worked");
+		ab.setMultiChoiceItems(availableMuscles, null, new DialogInterface.OnMultiChoiceClickListener() {
 	         @Override
-	         public void onClick(DialogInterface dialog, int which,
-	                 boolean isChecked) {
+	         public void onClick(DialogInterface dialog, int which, boolean isChecked) {
 	             if (isChecked) {
-	                 // If the user checked the item, add it to the selected items
-	                 mSelectedItems.add(which);
-	             } else if (mSelectedItems.contains(which)) {
-	                 // Else, if the item is already in the array, remove it 
-	                 mSelectedItems.remove(Integer.valueOf(which));
+	            	 mSelectedMuscles.add(availableMuscles[which]);
+	             } else if (mSelectedMuscles.contains(which)) { 
+	            	 mSelectedMuscles.remove(availableMuscles[which]);
 	             }
 	         }
 	     });
 		ab.setPositiveButton("Save", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                // User clicked OK, so save the mSelectedItems results somewhere
-                // or return them to the component that opened the dialog
-                
+            	setCurrentMuscles(mSelectedMuscles);
             }
         });
 		
         ab.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                
+            	
             }
         });
 		
