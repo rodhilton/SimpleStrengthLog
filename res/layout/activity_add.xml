@@ -52,4 +52,13 @@
         android:inputType="number" 
         android:text="@string/restTimeDefault"/>
 
+    <Button
+        android:id="@+id/button1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/textView2"
+        android:layout_below="@+id/restTimeText"
+        android:text="Button" 
+        android:onClick="clickTags"/>
+
 </RelativeLayout>

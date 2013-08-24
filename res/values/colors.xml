@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color
-        name="base_color"
-        >#aa3024</color>
+    <color name="base_color">#aa3024</color>
     <color name="actionbar_background">#79221a</color>
     <color name="actionbar_color">#ffffff</color>
     <color name="dimmed_text">#888888</color>
-    <color name="currentLogEntry">#ffdddd</color>
+    <color name="currentLogEntry">#b3aaaa</color>
 </resources>

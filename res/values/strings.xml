@@ -19,5 +19,12 @@
     <string name="restTimeDefault">90</string>
     <string name="undoButtonLabel">Undo</string>
     <string name="saveAndRestButtonLabel">Save &amp; Rest</string>
+    
+    <string-array name="musclegroups">
+        <item>Biceps</item>
+        <item>Triceps</item>
+        <item>Quadriceps</item>
+        <item>Shoulders</item>
+    </string-array>
 
 </resources>
