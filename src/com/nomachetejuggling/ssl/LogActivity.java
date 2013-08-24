@@ -52,11 +52,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.support.v4.app.NavUtils;
 
-//TODO: handle pause/resume
-//TODO: undo button to undo previously logged entry (only if it was this exercise, and button should only be active if it will actually work, so disabled until a 'save', and enabled after the save.  after clicking undo
-//   it should check if the head of the list is still the current exercise and, if not, still disable.
 //TODO: clean this code up, lots of duplication
-//TODO format the 'current' item via tunable colors, not hardcoded
 
 public class LogActivity extends Activity {
 
@@ -64,6 +60,7 @@ public class LogActivity extends Activity {
 	private List<LogEntry> previousLogs = null;
 	private Exercise currentExercise;
 	private CountDownTimer restTimer;
+	private int restSecsLeft = -1;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -78,20 +75,18 @@ public class LogActivity extends Activity {
 	@Override
 	protected void onStart() {
 		super.onStart();
-		currentExercise = (Exercise) getIntent().getExtras().getSerializable(
-				"exercise");
+		currentExercise = (Exercise) getIntent().getExtras().getSerializable("exercise");
 		Log.i("LogActivity", "Exercise: " + currentExercise.toString());
 
 		int numValues = 100;
 		int PICKER_RANGE = 5;
 
 		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
+		weightPicker.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
 
 		String[] displayedValues = new String[numValues];
 		// Populate the array
-		for (int i = 0; i < numValues; i++)
-			displayedValues[i] = String.valueOf(PICKER_RANGE * (i + 1))
-					+ " lbs";
+		for (int i = 0; i < numValues; i++) displayedValues[i] = String.valueOf(PICKER_RANGE * (i + 1)) + " lbs";
 
 		weightPicker.setMinValue(0);
 		weightPicker.setMaxValue(displayedValues.length - 1);
@@ -100,6 +95,7 @@ public class LogActivity extends Activity {
 
 		int maxReps = 20;
 		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
+		repsPicker.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
 		String[] displayedReps = new String[maxReps];
 		// Populate the array
 		for (int i = 0; i < maxReps; i++)
@@ -163,16 +159,26 @@ public class LogActivity extends Activity {
 		return super.onOptionsItemSelected(item);
 	}
 
-	public void logSet(View view) {
-		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
-		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
-
-		LogEntry log = new LogEntry();
-		log.exercise = currentExercise;
-		log.weight = ((weightPicker.getValue() + 1) * 5);
-		log.reps = (repsPicker.getValue() + 1);
+	public void clickLogSet(View view) {
+		LogEntry log = currentEntry();
 		this.currentLogs.add(log);
+		
+		Button undoButton = (Button) findViewById(R.id.undoButton);
+		undoButton.setEnabled(true);
 
+		this.persistCurrentLogs();
+	}
+	
+	public void clickLogSetAndRest(View view) {
+		clickLogSet(view);		
+		restFor(currentExercise.restTime);
+	}
+	
+	public void clickUndo(View view) {
+		Button undoButton = (Button) findViewById(R.id.undoButton);
+		undoButton.setEnabled(false);
+		
+		this.currentLogs.remove(this.currentLogs.size()-1);
 		this.persistCurrentLogs();
 	}
 
@@ -187,16 +193,7 @@ public class LogActivity extends Activity {
 		return log;
 	}
 
-	public void logSetAndRest(View view) {
-		LogEntry log = currentEntry();
-		this.currentLogs.add(log);
-
-		this.persistCurrentLogs();
-
-		ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
-		timerProgressBar.setMax(currentExercise.restTime);
-		timerProgressBar.setProgress(0);
-
+	private void restFor(int restTime) {
 		Button saveButton = (Button) findViewById(R.id.saveButton);
 		Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
 		Button undoButton = (Button) findViewById(R.id.undoButton);
@@ -205,28 +202,32 @@ public class LogActivity extends Activity {
 		saveAndRestButton.setText(currentExercise.restTime + "s");
 		saveAndRestButton.setEnabled(false);
 		undoButton.setEnabled(false);
+		
+		ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
+		timerProgressBar.setMax(currentExercise.restTime);
+		timerProgressBar.setProgress(0);	
 		timerProgressBar.setVisibility(View.VISIBLE);
+		this.restTimer = createRestTimer(this, restTime);
+		this.restTimer.start();
+	}
+	
+	private CountDownTimer createRestTimer(final LogActivity activity, int secsRemaining) {
+		return new CountDownTimer(secsRemaining * 1000, 1000) {
 
-		this.restTimer = new CountDownTimer(currentExercise.restTime * 1000, 1000) {
-
-			public void onTick(long millisUntilFinished) {
-				int secsLeft = (int) (millisUntilFinished / 1000);
+			public void onTick(long millisUntilFinished) {				
+				activity.restSecsLeft = (int) (millisUntilFinished / 1000);
 				ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
-				timerProgressBar.setProgress(currentExercise.restTime
-						- secsLeft);
+				timerProgressBar.setProgress(currentExercise.restTime - restSecsLeft);
 				Period period = new Period(millisUntilFinished);
 
 				Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
-				saveAndRestButton.setText(String.format("%02d:%02d",
-						period.getMinutes(), period.getSeconds()));
+				saveAndRestButton.setText(String.format("%02d:%02d", period.getMinutes(), period.getSeconds()));
 			}
 
 			public void onFinish() {
 				stopResting(false);
 			}
 		};
-		
-		this.restTimer.start();
 	}
 
 	private void stopResting(boolean cancelled) {
@@ -238,18 +239,19 @@ public class LogActivity extends Activity {
 		timerProgressBar.setVisibility(View.INVISIBLE);
 		saveAndRestButton.setText(getString(R.string.saveAndRestButtonLabel));
 
+		this.restSecsLeft = -1;
+		
 		saveButton.setEnabled(true);
 		saveAndRestButton.setEnabled(true);
 		undoButton.setEnabled(true);
 		
 		if(!cancelled) {	
 			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-			// Vibrate for 500 milliseconds
 			v.vibrate(500);
 	
 			MediaPlayer mPlayer = MediaPlayer.create(this.getApplicationContext(),
 					R.raw.fight);
-			mPlayer.setVolume(.7f, .7f);
+			mPlayer.setVolume(.6f, .6f);  //Let's not go crazy here, probably listening to music.
 			mPlayer.start();
 		}
 	}
@@ -337,9 +339,10 @@ public class LogActivity extends Activity {
 
 		LogEntry currentEntry = currentEntry();
 
-		// int
-		// currentTextColor=getResources().getColor(R.color.currentLogEntry);
-		sb.append("<br/><font color='#aaaaaa'><i>" + formatEntry(currentEntry)+ "</i></font>");
+		int currentTextColor=getResources().getColor(R.color.currentLogEntry);
+		String hexColor = String.format("#%06X", (0xFFFFFF & currentTextColor));
+		
+		sb.append("<font color='"+hexColor+"'><i>" + formatEntry(currentEntry)+ "</i></font>");
 
 		TextView currentLogs = (TextView) findViewById(R.id.currentLogsView);
 		currentLogs.setText(Html.fromHtml(sb.toString()));
@@ -368,7 +371,7 @@ public class LogActivity extends Activity {
 	
 	private String formatEntry(LogEntry entry) {
 		int oneRM=entry.oneRepMax();
-		return ""+entry.weight+"x"+entry.reps+" &nbsp; <small>(1RM="+oneRM+")</small>";
+		return ""+entry.weight+"x"+entry.reps+" <small>(1RM="+oneRM+")</small><br/>";
 	}
 
 	private StringBuilder builderForLogs(List<LogEntry> logs) {
@@ -376,12 +379,7 @@ public class LogActivity extends Activity {
 		for (int i = 0; i < logs.size(); i++) {
 			LogEntry logEntry = logs.get(i);
 			if (logEntry.exercise.equals(currentExercise)) {
-				if(i==logs.size()-1) {
-					sb.append(formatEntry(logEntry));
-				} else {
-					sb.append(formatEntry(logEntry));
-					sb.append("<br/>");
-				}
+				sb.append(formatEntry(logEntry));
 			}
 		}
 		return sb;
@@ -400,7 +398,11 @@ public class LogActivity extends Activity {
 		
 		if(this.restTimer != null) {
 			restTimer.cancel();
+			savedInstanceState.putInt("RestTimeRemaining", this.restSecsLeft);
 		}
+		
+		Button undoButton = (Button) findViewById(R.id.undoButton);
+		savedInstanceState.putBoolean("UndoEnabled", undoButton.isEnabled());
 	}
 
 	@Override
@@ -416,6 +418,13 @@ public class LogActivity extends Activity {
 
 		weightPicker.setValue(weightPickerPosition);
 		repsPicker.setValue(repsPickerPosition);
+		
+		if(savedInstanceState.containsKey("RestTimeRemaining")) {
+			restFor(savedInstanceState.getInt("RestTimeRemaining"));
+		}
+		
+		Button undoButton = (Button) findViewById(R.id.undoButton);
+		undoButton.setEnabled(savedInstanceState.getBoolean("UndoEnabled"));
 	}
 
 	private static class LogSet {
@@ -488,7 +497,7 @@ public class LogActivity extends Activity {
 		protected void onPostExecute(LogSet result) {
 			super.onPostExecute(result);
 			act.loadCurrentLogs(result);
-			dialog.hide();
+			dialog.dismiss();
 		}
 
 	}
