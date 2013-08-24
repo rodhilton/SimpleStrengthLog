@@ -38,9 +38,9 @@ public class AddActivity extends Activity {
 		
 		if(savedInstanceState != null) {
 			if(savedInstanceState.containsKey("currentMuscles")) {
-				currentMuscles = savedInstanceState.getStringArray("currentMuscles");
+				setCurrentMuscles(savedInstanceState.getStringArray("currentMuscles"));
 			} else {
-				currentMuscles = new String[]{};
+				setCurrentMuscles(new String[]{});
 			}
 		}
 	}
@@ -96,20 +96,31 @@ public class AddActivity extends Activity {
 		finish();	
 	}
 	
-	private void setCurrentMuscles(List<String> muscles) {
-    	currentMuscles = muscles.toArray(new String[]{});
+	private void setCurrentMuscles(String[] muscles) {
+    	currentMuscles = muscles;
     	
     	Button musclesButton = (Button) findViewById(R.id.musclesButton);
-    	musclesButton.setText(Util.combine(currentMuscles, ", ", getString(R.string.setTagsButton)));
+    	musclesButton.setText(Util.join(currentMuscles, ", ", getString(R.string.setTagsButton)));
 	}
 	
 	public void clickTags(View view) {
 		
 		final ArrayList<String> mSelectedMuscles = new ArrayList<String>();
+		if(currentMuscles != null) {
+			for(String currentMuscle: currentMuscles) {
+				mSelectedMuscles.add(currentMuscle);
+			}
+		}
+		
+		//Super inefficient but it's a small list, hopefully we can get away with it.
+		boolean[] checkedItems = new boolean[availableMuscles.length];	
+		for(int i=0;i<checkedItems.length;i++) {
+			checkedItems[i] = mSelectedMuscles.contains(availableMuscles[i]);
+		}
 		
 		AlertDialog.Builder ab = new AlertDialog.Builder(this);
 		ab.setTitle("Select Muscles Worked");
-		ab.setMultiChoiceItems(availableMuscles, null, new DialogInterface.OnMultiChoiceClickListener() {
+		ab.setMultiChoiceItems(availableMuscles, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
 	         @Override
 	         public void onClick(DialogInterface dialog, int which, boolean isChecked) {
 	             if (isChecked) {
@@ -122,7 +133,8 @@ public class AddActivity extends Activity {
 		ab.setPositiveButton("Save", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-            	setCurrentMuscles(mSelectedMuscles);
+            	String[] muscles = mSelectedMuscles.toArray(new String[]{});
+            	setCurrentMuscles(muscles);
             }
         });
 		

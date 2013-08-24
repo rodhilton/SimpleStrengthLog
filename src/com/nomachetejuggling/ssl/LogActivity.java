@@ -52,6 +52,7 @@ import android.widget.Toast;
 import android.support.v4.app.NavUtils;
 
 //TODO: clean this code up, lots of duplication
+//FIXME: currently if you change the scrollers, then rotate, it loses your value and restores based on log.  need to have a listener to mark scrollers dirty and save/restore from it if there
 
 public class LogActivity extends Activity {
 
@@ -65,7 +66,7 @@ public class LogActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_log);
-		setupActionBar();
+		getActionBar().setDisplayHomeAsUpEnabled(true);
 		
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         boolean keepScreenOnSetting = settings.getBoolean("screenOn", false);
@@ -81,7 +82,6 @@ public class LogActivity extends Activity {
 		previousLogs = new ArrayList<LogEntry>();
 		
 		currentExercise = (Exercise) getIntent().getExtras().getSerializable("exercise");
-		Log.i("LogActivity", "Exercise: " + currentExercise.toString());
 
 		int numValues = 100;
 		int PICKER_RANGE = 5;
@@ -124,46 +124,26 @@ public class LogActivity extends Activity {
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			ActionBar ab = getActionBar();
-			ab.setTitle("Log");
-			ab.setSubtitle(currentExercise.name);
+			ab.setTitle(currentExercise.name);
+			if(currentExercise.muscles != null && currentExercise.muscles.length > 0) {
+				ab.setSubtitle(Util.join(currentExercise.muscles, ", ", null));
+			}
 		}
 		
 		File dir = Util.getLogStorageDir(getApplicationContext());
 		
 		new LoadLogsTask(this).execute(currentExercise, dir);
 	}
-
-	@Override
-	protected void onStart() {
-		super.onStart();
-		
-	}
-
-	/**
-	 * Set up the {@link android.app.ActionBar}.
-	 */
-	private void setupActionBar() {
-		getActionBar().setDisplayHomeAsUpEnabled(true);
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		// getMenuInflater().inflate(R.menu.log, menu);
-		return true;
-	}
+//
+//	@Override
+//	public boolean onCreateOptionsMenu(Menu menu) {
+//		return true;
+//	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case android.R.id.home:
-			// This ID represents the Home or Up button. In the case of this
-			// activity, the Up button is shown. Use NavUtils to allow users
-			// to navigate up one level in the application structure. For
-			// more details, see the Navigation pattern on Android Design:
-			//
-			// http://developer.android.com/design/patterns/navigation.html#up-vs-back
-			//
 			NavUtils.navigateUpFromSameTask(this);
 			if(this.restTimer != null) {
 				this.restTimer.cancel();
@@ -195,82 +175,7 @@ public class LogActivity extends Activity {
 		this.currentLogs.remove(this.currentLogs.size()-1);
 		this.persistCurrentLogs();
 	}
-
-	private LogEntry currentEntry() {
-		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
-		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
-
-		LogEntry log = new LogEntry();
-		log.exercise = currentExercise.name;
-		log.weight = ((weightPicker.getValue() + 1) * 5);
-		log.reps = (repsPicker.getValue() + 1);
-		log.time = new LocalTime().toString(ISODateTimeFormat.time());
-		return log;
-	}
-
-	private void restFor(int restTime) {
-		Button saveButton = (Button) findViewById(R.id.saveButton);
-		Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
-		Button undoButton = (Button) findViewById(R.id.undoButton);
-
-		saveButton.setEnabled(false);
-		saveAndRestButton.setText(currentExercise.restTime + "s");
-		saveAndRestButton.setEnabled(false);
-		undoButton.setEnabled(false);
-		
-		ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
-		timerProgressBar.setMax(currentExercise.restTime);
-		timerProgressBar.setProgress(0);	
-		timerProgressBar.setVisibility(View.VISIBLE);
-		this.restTimer = createRestTimer(this, restTime);
-		this.restTimer.start();
-	}
 	
-	private CountDownTimer createRestTimer(final LogActivity activity, int secsRemaining) {
-		return new CountDownTimer(secsRemaining * 1000, 1000) {
-
-			public void onTick(long millisUntilFinished) {				
-				activity.restSecsLeft = (int) (millisUntilFinished / 1000);
-				ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
-				timerProgressBar.setProgress(currentExercise.restTime - restSecsLeft);
-				Period period = new Period(millisUntilFinished);
-
-				Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
-				saveAndRestButton.setText(String.format("%02d:%02d", period.getMinutes(), period.getSeconds()));
-			}
-
-			public void onFinish() {
-				stopResting(false);
-			}
-		};
-	}
-
-	private void stopResting(boolean cancelled) {
-		final ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
-		final Button saveButton = (Button) findViewById(R.id.saveButton);
-		final Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
-		final Button undoButton = (Button) findViewById(R.id.undoButton);
-
-		timerProgressBar.setVisibility(View.INVISIBLE);
-		saveAndRestButton.setText(getString(R.string.saveAndRestButtonLabel));
-
-		this.restSecsLeft = -1;
-		
-		saveButton.setEnabled(true);
-		saveAndRestButton.setEnabled(true);
-		undoButton.setEnabled(true);
-		
-		if(!cancelled) {	
-			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-			v.vibrate(new long[]{160, 228, 13,228, 13,228, 13,228, 13,228}, -1);
-	
-			MediaPlayer mPlayer = MediaPlayer.create(this.getApplicationContext(),
-					R.raw.fight);
-			mPlayer.setVolume(.6f, .6f);  //Let's not go crazy here, probably listening to music.
-			mPlayer.start();
-		}
-	}
-
 	@Override
 	public void onBackPressed() {
 		if(this.restTimer != null) {
@@ -281,8 +186,50 @@ public class LogActivity extends Activity {
 			super.onBackPressed();
 		}
 	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+		super.onSaveInstanceState(savedInstanceState);
 
-	public void loadCurrentLogs(LogSet logSet) {
+		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
+		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
+
+		savedInstanceState.putInt("WeightPickerPosition",
+				weightPicker.getValue());
+		savedInstanceState.putInt("RepsPickerPosition", repsPicker.getValue());
+		
+		if(this.restTimer != null) {
+			restTimer.cancel();
+			savedInstanceState.putInt("RestTimeRemaining", this.restSecsLeft);
+		}
+		
+		Button undoButton = (Button) findViewById(R.id.undoButton);
+		savedInstanceState.putBoolean("UndoEnabled", undoButton.isEnabled());
+	}
+
+	@Override
+	public void onRestoreInstanceState(Bundle savedInstanceState) {
+		super.onRestoreInstanceState(savedInstanceState);
+		// Restore UI state from the savedInstanceState.
+		// This bundle has also been passed to onCreate.
+		int weightPickerPosition = savedInstanceState.getInt("WeightPickerPosition");
+		int repsPickerPosition = savedInstanceState.getInt("RepsPickerPosition");
+
+		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
+		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
+
+		weightPicker.setValue(weightPickerPosition);
+		repsPicker.setValue(repsPickerPosition);
+		
+		if(savedInstanceState.containsKey("RestTimeRemaining")) {
+			restFor(savedInstanceState.getInt("RestTimeRemaining"));
+		}
+		
+		Button undoButton = (Button) findViewById(R.id.undoButton);
+		undoButton.setEnabled(savedInstanceState.getBoolean("UndoEnabled"));
+	}
+
+	private void loadCurrentLogs(LogSet logSet) {
 		currentLogs.clear();
 		currentLogs.addAll(logSet.currentLogs);
 
@@ -329,7 +276,7 @@ public class LogActivity extends Activity {
 		this.showCurrentLogs();
 	}
 
-	public void persistCurrentLogs() {
+	private void persistCurrentLogs() {
 		File dir = Util.getLogStorageDir(this.getApplicationContext());
 		File file = new File(dir, new LocalDate().toString("yyyy-MM-dd") + ".json");
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -400,47 +347,6 @@ public class LogActivity extends Activity {
 		return sb;
 	}
 
-	@Override
-	public void onSaveInstanceState(Bundle savedInstanceState) {
-		super.onSaveInstanceState(savedInstanceState);
-
-		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
-		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
-
-		savedInstanceState.putInt("WeightPickerPosition",
-				weightPicker.getValue());
-		savedInstanceState.putInt("RepsPickerPosition", repsPicker.getValue());
-		
-		if(this.restTimer != null) {
-			restTimer.cancel();
-			savedInstanceState.putInt("RestTimeRemaining", this.restSecsLeft);
-		}
-		
-		Button undoButton = (Button) findViewById(R.id.undoButton);
-		savedInstanceState.putBoolean("UndoEnabled", undoButton.isEnabled());
-	}
-
-	@Override
-	public void onRestoreInstanceState(Bundle savedInstanceState) {
-		super.onRestoreInstanceState(savedInstanceState);
-		// Restore UI state from the savedInstanceState.
-		// This bundle has also been passed to onCreate.
-		int weightPickerPosition = savedInstanceState.getInt("WeightPickerPosition");
-		int repsPickerPosition = savedInstanceState.getInt("RepsPickerPosition");
-
-		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
-		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
-
-		weightPicker.setValue(weightPickerPosition);
-		repsPicker.setValue(repsPickerPosition);
-		
-		if(savedInstanceState.containsKey("RestTimeRemaining")) {
-			restFor(savedInstanceState.getInt("RestTimeRemaining"));
-		}
-		
-		Button undoButton = (Button) findViewById(R.id.undoButton);
-		undoButton.setEnabled(savedInstanceState.getBoolean("UndoEnabled"));
-	}
 
 	private static class LogSet {
 		public List<LogEntry> currentLogs = new ArrayList<LogEntry>();
@@ -517,4 +423,81 @@ public class LogActivity extends Activity {
 
 	}
 
+
+	private LogEntry currentEntry() {
+		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
+		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
+
+		LogEntry log = new LogEntry();
+		log.exercise = currentExercise.name;
+		log.weight = ((weightPicker.getValue() + 1) * 5);
+		log.reps = (repsPicker.getValue() + 1);
+		log.time = new LocalTime().toString(ISODateTimeFormat.time());
+		return log;
+	}
+
+	private void restFor(int restTime) {
+		Button saveButton = (Button) findViewById(R.id.saveButton);
+		Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
+		Button undoButton = (Button) findViewById(R.id.undoButton);
+
+		saveButton.setEnabled(false);
+		saveAndRestButton.setText(currentExercise.restTime + "s");
+		saveAndRestButton.setEnabled(false);
+		undoButton.setEnabled(false);
+		
+		ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
+		timerProgressBar.setMax(currentExercise.restTime);
+		timerProgressBar.setProgress(0);	
+		timerProgressBar.setVisibility(View.VISIBLE);
+		this.restTimer = createRestTimer(this, restTime);
+		this.restTimer.start();
+	}
+	
+	private CountDownTimer createRestTimer(final LogActivity activity, int secsRemaining) {
+		return new CountDownTimer(secsRemaining * 1000, 1000) {
+
+			public void onTick(long millisUntilFinished) {				
+				activity.restSecsLeft = (int) (millisUntilFinished / 1000);
+				ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
+				timerProgressBar.setProgress(currentExercise.restTime - restSecsLeft);
+				Period period = new Period(millisUntilFinished);
+
+				Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
+				saveAndRestButton.setText(String.format("%02d:%02d", period.getMinutes(), period.getSeconds()));
+			}
+
+			public void onFinish() {
+				stopResting(false);
+			}
+		};
+	}
+
+	private void stopResting(boolean cancelled) {
+		final ProgressBar timerProgressBar = (ProgressBar) findViewById(R.id.restTimerBar);
+		final Button saveButton = (Button) findViewById(R.id.saveButton);
+		final Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
+		final Button undoButton = (Button) findViewById(R.id.undoButton);
+
+		timerProgressBar.setVisibility(View.INVISIBLE);
+		saveAndRestButton.setText(getString(R.string.saveAndRestButtonLabel));
+
+		this.restSecsLeft = -1;
+		
+		saveButton.setEnabled(true);
+		saveAndRestButton.setEnabled(true);
+		undoButton.setEnabled(true);
+		
+		if(!cancelled) {	
+			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+			v.vibrate(new long[]{160, 228, 13,228, 13,228, 13,228, 13,228}, -1);
+	
+			MediaPlayer mPlayer = MediaPlayer.create(this.getApplicationContext(),
+					R.raw.fight);
+			mPlayer.setVolume(.6f, .6f);  //Let's not go crazy here, probably listening to music.
+			mPlayer.start();
+		}
+	}
+
+	
 }

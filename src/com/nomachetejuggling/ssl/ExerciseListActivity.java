@@ -53,6 +53,8 @@ import android.widget.Toast;
 //TODO: setting for lbs/kg ? (should it change range?)
 //TODO: replace dialog progress bar on load with one inside log area?
 
+//TODO: Context menu on long press: ["Log" (default click), "Favorite/Unfavorite" (secondary), "Edit", "Delete"]
+
 public class ExerciseListActivity extends Activity {
 	ExerciseAdapter exerciseAdapter;
 	ArrayList<Exercise> exercises;
@@ -72,7 +74,7 @@ public class ExerciseListActivity extends Activity {
 
 		listView.setEmptyView(findViewById(android.R.id.empty));
 
-		exerciseAdapter = new ExerciseAdapter(this, R.layout.list_exercises, R.id.exerciseName, exercises);
+		exerciseAdapter = new ExerciseAdapter(this, R.layout.list_exercises, R.id.line1, exercises);
 		listView.setAdapter(exerciseAdapter);
 		
 		listView.setOnItemClickListener(new OnItemClickListener()
@@ -211,9 +213,14 @@ public class ExerciseListActivity extends Activity {
 						R.layout.list_exercises, parent, false);
 			}
 			Exercise item = getItem(position);
-			TextView text = (TextView) row.findViewById(R.id.exerciseName);
+			TextView text = (TextView) row.findViewById(R.id.line1);
 			text.setText(item.name);
-			Log.i("BLAH", Util.combine(item.muscles, ",", ""));
+			
+			if(item.muscles != null && item.muscles.length > 0) {
+				TextView muscleListView = (TextView) row.findViewById(R.id.muscleList);
+				muscleListView.setText(Util.join(item.muscles, ", ", ""));
+				muscleListView.setVisibility(View.VISIBLE);
+			}
 			return row;
 		}
 	}
