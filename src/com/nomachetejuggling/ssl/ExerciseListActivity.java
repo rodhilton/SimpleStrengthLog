@@ -41,9 +41,10 @@ import android.widget.Toast;
 //TODO: load file in a thread, it can be pretty slow
 //TODO: only store exercise name in logs
 //TODO: default file of exercises (must have favorite feature first)
-//TODO: make add a dialog, not an activity.  This may prevent issues with activity resume/pause
 //TODO: "workout summary" feature with all of current day's stuff.  datepicker for other dates.
 //TODO: (maybe) full historical record for an exercise to see improvement.  should this be part of larger suite?
+//TODO: setting for lbs/kg ? (should it change range?)
+//TODO: replace dialog progress bar on load with one inside log area?
 
 public class ExerciseListActivity extends Activity {
 	ExerciseAdapter exerciseAdapter;
@@ -95,6 +96,7 @@ public class ExerciseListActivity extends Activity {
 					ADD_EXERCISE_REQUEST);
 			return true;
 		case R.id.action_settings:
+			startActivity(new Intent(this, SettingsActivity.class));
 			return true;
 		}
 		return false;

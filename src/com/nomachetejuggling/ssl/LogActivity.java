@@ -33,10 +33,12 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.PowerManager;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
@@ -67,7 +69,17 @@ public class LogActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_log);
 		setupActionBar();
-		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		
+		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean keepScreenOnSetting = settings.getBoolean("screenOn", false);
+        
+        if(keepScreenOnSetting) {
+        	getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        	Log.i("SETTINGS", "Keeping screen on, per request");
+        } else {
+        	Log.i("SETTINGS", "Not keeping screen on");
+        }
+        
 		currentLogs = new ArrayList<LogEntry>();
 		previousLogs = new ArrayList<LogEntry>();
 	}
