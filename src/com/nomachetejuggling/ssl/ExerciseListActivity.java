@@ -57,6 +57,8 @@ import com.nomachetejuggling.ssl.model.MuscleGroups;
 //FUTURE: (maybe) full historical record for an exercise to see improvement.  should this be part of larger suite?
 //FUTURE: Filter should be a navigation dropdown, not a button
 
+//FIXME: low priority, but if you started working out at 11:58pm and did 4 sets, they'd be logged to one file.. then if you do a 5th at 12:01 am, all 5 would be logged there, duplicating the 4.
+
 public class ExerciseListActivity extends ListActivity {
 	private ExerciseAdapter exerciseAdapter;
 	private ArrayList<Exercise> allExercises;
