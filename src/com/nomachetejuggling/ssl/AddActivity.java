@@ -16,6 +16,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.nomachetejuggling.ssl.model.Exercise;
@@ -23,7 +25,7 @@ import com.nomachetejuggling.ssl.model.Exercise;
 public class AddActivity extends Activity {
 	
 	private String[] availableMuscles;
-	private String[] currentMuscles;
+	private String[] currentMuscles;	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +34,7 @@ public class AddActivity extends Activity {
 		setupActionBar();
 	
 		availableMuscles = getIntent().getExtras().getStringArray("muscles");
+	
 		
 		if(savedInstanceState != null) {
 			if(savedInstanceState.containsKey("currentMuscles")) {
@@ -39,6 +42,20 @@ public class AddActivity extends Activity {
 			} else {
 				setCurrentMuscles(new String[]{});
 			}
+		} else if(getIntent().getExtras().containsKey("exercise")) {
+			Exercise exercise = (Exercise) getIntent().getExtras().getSerializable("exercise");
+			
+			EditText nameText = (EditText) findViewById(R.id.nameText);
+			nameText.setText(exercise.name);
+			nameText.setEnabled(false); //Renaming has huge cascading effects, it's not allowed for now
+			
+			EditText restTimeText = (EditText) findViewById(R.id.restTimeText);
+			restTimeText.setText(""+exercise.restTime);
+			
+			CheckBox favoriteCheckBox = (CheckBox) findViewById(R.id.favoriteCheckBoxAdd);
+			favoriteCheckBox.setChecked(exercise.favorite);
+			
+			setCurrentMuscles(exercise.muscles);
 		}
 	}
 
@@ -100,11 +117,14 @@ public class AddActivity extends Activity {
 			valid = false;
 		}
 		
+		CheckBox favoriteCheckBox = (CheckBox) findViewById(R.id.favoriteCheckBoxAdd);		
+		
 		if(valid) {
 			Exercise newExercise = new Exercise();
 			newExercise.name=nameText.getText().toString();
 			newExercise.restTime=restTime;
 			newExercise.muscles = this.currentMuscles;
+			newExercise.favorite = favoriteCheckBox.isChecked();
 			
 			Intent intent = new Intent();
 			intent.putExtra("newExercise",newExercise);
