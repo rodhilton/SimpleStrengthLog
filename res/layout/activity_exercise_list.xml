@@ -9,7 +9,7 @@
     tools:context=".ExerciseListActivity" >
 
     <ListView
-        android:id="@+id/exerciseList"
+        android:id="@android:id/list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="false"

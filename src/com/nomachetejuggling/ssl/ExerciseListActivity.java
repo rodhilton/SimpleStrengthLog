@@ -9,27 +9,29 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import android.app.ActionBar;
-import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Html;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,12 +42,13 @@ import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.MuscleGroups;
 
 // -- Release 1.0
-//TODO: Long press to Edit/Delete exercise
+//TODO: Long press to Edit exercise (can't change name though)
 //TODO: Context menu on long press: ["Log" (default click), "Favorite/Unfavorite" (secondary), "Edit", "Delete"]
 //TODO: Favorite (part of long press menu, later a separate star)
 //TODO: default file of exercises (must have favorite feature first)
 
 // -- Future Release
+//FUTURE: Edit name of exercise
 //FUTURE: Load exercise list async
 //FUTURE: replace dialog progress bar with simple progress bar in log area
 //FUTURE: Metric/Imperial setting (this should change increment from 5 to 1)
@@ -53,7 +56,7 @@ import com.nomachetejuggling.ssl.model.MuscleGroups;
 //FUTURE: (maybe) full historical record for an exercise to see improvement.  should this be part of larger suite?
 //FUTURE: Filter should be a navigation dropdown, not a button
 
-public class ExerciseListActivity extends Activity {
+public class ExerciseListActivity extends ListActivity {
 	private ExerciseAdapter exerciseAdapter;
 	private ArrayList<Exercise> allExercises;
 	private ArrayList<Exercise> displayExercises;
@@ -64,68 +67,65 @@ public class ExerciseListActivity extends Activity {
 
 	private static final int ADD_EXERCISE_REQUEST = 0;
 
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_exercise_list);
 
-		ListView listView = (ListView) this.findViewById(R.id.exerciseList);
 		allExercises = new ArrayList<Exercise>();
 		displayExercises = new ArrayList<Exercise>();
-
-		listView.setEmptyView(findViewById(android.R.id.empty));
-
-		exerciseAdapter = new ExerciseAdapter(this, R.layout.list_exercises, R.id.line1, displayExercises);
-		listView.setAdapter(exerciseAdapter);
-
-		listView.setOnItemClickListener(new OnItemClickListener() {
-			@Override
-			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-				Exercise exercise = allExercises.get(arg2);
-				Intent intent = new Intent(ExerciseListActivity.this, LogActivity.class);
-				intent.putExtra("exercise", exercise);
-				startActivity(intent);
-			}
-		});
-		
-		listView.setOnLongClickListener(new OnLongClickListener() {
-
-			@Override
-			public boolean onLongClick(View arg0) {
-				Log.i("EE", "woof");
-				PopupMenu menu=new PopupMenu(getBaseContext(), arg0);
-				menu.getMenu().add("Test");
-				menu.show();
-				return true;
-			}
-			
-		});
-		
 		dirty = false;
+		
+		exerciseAdapter = new ExerciseAdapter(this, R.layout.list_exercises, R.id.line1, displayExercises);
+		setListAdapter(exerciseAdapter);
+		
+		registerForContextMenu(getListView());
 
-		this.muscleGroups = Util.loadMuscleGroups(getResources());
-		if (savedInstanceState != null) {
-			this.filter = savedInstanceState.getString("filter");
+		if(savedInstanceState != null) {
+			muscleGroups = (MuscleGroups) savedInstanceState.getSerializable("muscleGroups");
+			filter = savedInstanceState.getString("filter");
+		} else {
+			muscleGroups = Util.loadMuscleGroups(getResources());
+			filter = "All";
 		}
+	}	
+
+	@Override
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+		super.onSaveInstanceState(savedInstanceState);
+		
+		savedInstanceState.putSerializable("muscleGroups", this.muscleGroups);
+		savedInstanceState.putString("filter", filter);
+	}
+
+	@Override
+	protected void onStop() {
+		super.onStop();
+		saveExercises();
+	}
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+		loadExercises();
+		displayExercises();
 	}
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-	  super.onCreateContextMenu(menu, v, menuInfo); 
-	  if (v.getId()==R.id.line1) {
-		// Set title for the context menu
-		    menu.setHeaderTitle("History"); 
-		 
-		    // Add all the menu options
-		    menu.add(Menu.NONE, 1, 0, "Option One"); 
-		    menu.add(Menu.NONE, 2, 1, "Option Two"); 
-		    menu.add(Menu.NONE, 3, 2, "Option Three"); 
-	  }
+		AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+		Exercise selectedExercise = ((ExerciseAdapter)this.getListAdapter()).getItem(info.position);
+
+	    menu.setHeaderTitle(selectedExercise.name);
+		
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.exercise_list_context, menu);
+		super.onCreateContextMenu(menu, v, menuInfo); 
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.exercise_list, menu);
 
 		MenuItem item = menu.findItem(R.id.pick_action_provider);
@@ -134,6 +134,8 @@ public class ExerciseListActivity extends Activity {
 
 		return true;
 	}
+	
+	
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -149,6 +151,30 @@ public class ExerciseListActivity extends Activity {
 		}
 		return false;
 	}
+	
+	
+	@Override
+    protected void onListItemClick(ListView l, View v, int position, long id) { 
+		Exercise exercise = allExercises.get(position);
+		logExercise(exercise);
+	}
+	
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+	    // Here's how you can get the correct item in onContextItemSelected()
+	    AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+	    Exercise selectedExercise = ((ExerciseAdapter) getListAdapter()).getItem(info.position);
+	    
+	    switch(item.getItemId()) {
+	    	case R.id.logContextMenu :
+	    		logExercise(selectedExercise);
+	    		return true;
+	    	case R.id.deleteContextMenu :
+	    		deleteExercise(selectedExercise);
+	    		return true;
+	    }
+	    return false;
+	}
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -158,42 +184,50 @@ public class ExerciseListActivity extends Activity {
 				Bundle extras = intent.getExtras();
 				if (extras != null) {
 					Exercise newExercise = (Exercise) extras.getSerializable("newExercise");
-					Log.i("newExercise", newExercise.toString());
-
-					allExercises.add(newExercise);
-					displayExercises();
-					dirty = true;
-					saveExercises();
+					addExercise(newExercise);
 				}
 			}
 		}
 	}
-
-	@Override
-	public void onSaveInstanceState(Bundle savedInstanceState) {
-		super.onSaveInstanceState(savedInstanceState);
-		savedInstanceState.putSerializable("muscleGroups", this.muscleGroups);
-		savedInstanceState.putString("filter", filter);
-	}
-
-	@Override
-	public void onRestoreInstanceState(Bundle savedInstanceState) {
-		super.onRestoreInstanceState(savedInstanceState);
-		this.muscleGroups = (MuscleGroups) savedInstanceState.getSerializable("muscleGroups");
-	}
-
-	@Override
-	protected void onStop() {
-		super.onStop();
-		saveExercises();
-	}
-
-	@Override
-	protected void onStart() {
-		super.onStart();
-		loadExercises();
+	
+	public void selectFilter(CharSequence title) {
+		this.filter = title.toString();
 		displayExercises();
 	}
+	
+	private void addExercise(Exercise newExercise) {
+		allExercises.add(newExercise);
+		displayExercises();
+		dirty = true;
+		saveExercises();
+	}
+	
+	private void logExercise(Exercise exercise) {
+		Intent intent = new Intent(ExerciseListActivity.this, LogActivity.class);
+		intent.putExtra("exercise", exercise);
+		startActivity(intent);
+	}
+	
+	private void deleteExercise(final Exercise exercise) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage(Html.fromHtml("Are you sure you want to delete '"+StringEscapeUtils.escapeHtml3(exercise.name)+"'? <br/><small>(Note: this will not delete any logs)</small>"))
+		       .setCancelable(false)
+		       .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+		           public void onClick(DialogInterface dialog, int id) {
+		        	   allExercises.remove(exercise);
+		        	   dirty = true;
+		       			displayExercises();
+		    		saveExercises();
+		           }
+		       })
+		       .setNegativeButton("No", new DialogInterface.OnClickListener() {
+		           public void onClick(DialogInterface dialog, int id) {
+		                dialog.cancel();
+		           }
+		       });
+		AlertDialog alert = builder.create();
+		alert.show();
+	}	
 
 	private void saveExercises() {
 		if (dirty == false)
@@ -277,11 +311,6 @@ public class ExerciseListActivity extends Activity {
 			}
 			return row;
 		}
-	}
-
-	public void selectFilter(CharSequence title) {
-		this.filter = title.toString();
-		displayExercises();
 	}
 
 }
