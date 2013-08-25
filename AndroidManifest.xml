@@ -29,8 +29,7 @@
         <activity
             android:name="com.nomachetejuggling.ssl.AddActivity"
             android:label="@string/title_activity_add"
-            android:parentActivityName="com.nomachetejuggling.ssl.ExerciseListActivity"
-            android:windowSoftInputMode="stateVisible" >
+            android:parentActivityName="com.nomachetejuggling.ssl.ExerciseListActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.nomachetejuggling.ssl.ExerciseList" />

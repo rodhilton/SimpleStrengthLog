@@ -1,33 +1,32 @@
 package com.nomachetejuggling.ssl;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.joda.time.Days;
 import org.joda.time.LocalDate;
 import org.joda.time.Months;
 import org.joda.time.Weeks;
 import org.joda.time.Years;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import com.nomachetejuggling.ssl.model.Exercise;
-import com.nomachetejuggling.ssl.model.MuscleGroups;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.content.res.Resources;
-import android.content.res.Resources.NotFoundException;
 import android.os.Environment;
 import android.util.Log;
+import android.widget.Toast;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import com.nomachetejuggling.ssl.model.MuscleGroups;
 
 public class Util {
 
@@ -47,6 +46,15 @@ public class Util {
 			Log.w("Util", "Directory not created");
 		}
 		return new File(myDir, "exerciseList.json");
+	}
+	
+	public static File getMuscleFile(Context context) {
+		File dir = Environment.getExternalStorageDirectory();
+		File myDir = new File(dir, "/SimpleHealthSuite/Strength");
+		if (!myDir.mkdirs()) {
+			Log.w("Util", "Directory not created");
+		}
+		return new File(myDir, "muscles.json");
 	}
 
 	public static String getRelativeDate(LocalDate today, LocalDate previousDate) {
@@ -82,21 +90,32 @@ public class Util {
 		}
 	}
 
-	public static MuscleGroups loadMuscleGroups(Resources resources) {
-		Gson gson=new Gson(); 
+	public static MuscleGroups loadMuscleGroups(Context context) {
+		File file = Util.getMuscleFile(context);
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		MuscleGroups muscleGroups = new MuscleGroups(new HashMap<String, List<String>>());		 
 		Type type = new TypeToken<Map<String, List<String>>>(){}.getType();
 		try {
-			InputStream stream = resources.openRawResource(R.raw.muscles);
+			String json = FileUtils.readFileToString(file, "UTF-8");
+			Map<String, List<String>> myMap = gson.fromJson(json, type);
 		
-			Map<String, List<String>> myMap = gson.fromJson(new InputStreamReader(stream), type);
-		
-			return new MuscleGroups(myMap);
-		} catch(NotFoundException e) {
-			Log.e("IO", "Somehow the raw resource couldn't be found...", e);
-			return new MuscleGroups(new HashMap<String, List<String>>());
+			muscleGroups = new MuscleGroups(myMap);
+		} catch(IOException e) { //File missing or unreadable, load defaults (and save them if possible)
+			try {
+				InputStream stream = context.getResources().openRawResource(R.raw.muscles_default);
+				String json = IOUtils.toString(stream, "UTF-8");		
+			
+				Map<String, List<String>> myMap = gson.fromJson(json, type);
+				muscleGroups = new MuscleGroups(myMap);
+				FileUtils.write(file, json, "UTF-8");
+			} catch (IOException ioe) {
+				Toast.makeText(context, context.getString(R.string.error_cannot_save_muscles), Toast.LENGTH_SHORT).show();
+			}
 		}
+		
+		return muscleGroups;
 	}
-
+	
 	public static String join(String[] s, String separator, String ifEmpty)
 	{
 	  if (s.length==0) return ifEmpty;

@@ -11,6 +11,7 @@
     <string name="save_exercise">Save</string>
     <string name="empty_exercise_list">No exercises found</string>
     <string name="error_cannot_save_exercises">Unable to save exercises, SD card not mounted or unwritable.</string>
+    <string name="error_cannot_save_muscles">Unable to save muscle group data, SD card not mounted or unwritable.</string>
     <string name="error_cannot_save_log">Unable to save log, SD card not mounted or unwritable.</string>
     <string name="title_exercise_list">Strength Log</string>
     <string name="title_activity_log">Log</string>

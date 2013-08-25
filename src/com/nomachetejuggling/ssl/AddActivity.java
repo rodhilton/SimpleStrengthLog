@@ -15,6 +15,7 @@ import android.support.v4.app.NavUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -36,13 +37,13 @@ public class AddActivity extends Activity {
 		availableMuscles = getIntent().getExtras().getStringArray("muscles");
 	
 		
-		if(savedInstanceState != null) {
+		if(savedInstanceState != null) { //Restore
 			if(savedInstanceState.containsKey("currentMuscles")) {
 				setCurrentMuscles(savedInstanceState.getStringArray("currentMuscles"));
 			} else {
 				setCurrentMuscles(new String[]{});
 			}
-		} else if(getIntent().getExtras().containsKey("exercise")) {
+		} else if(getIntent().getExtras().containsKey("exercise")) { //Edit
 			Exercise exercise = (Exercise) getIntent().getExtras().getSerializable("exercise");
 			
 			EditText nameText = (EditText) findViewById(R.id.nameText);
@@ -51,17 +52,19 @@ public class AddActivity extends Activity {
 			
 			EditText restTimeText = (EditText) findViewById(R.id.restTimeText);
 			restTimeText.setText(""+exercise.restTime);
+			restTimeText.requestFocus();
 			
 			CheckBox favoriteCheckBox = (CheckBox) findViewById(R.id.favoriteCheckBoxAdd);
 			favoriteCheckBox.setChecked(exercise.favorite);
 			
 			setCurrentMuscles(exercise.muscles);
+			
+			getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+		} else { // Add
+			getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
 		}
 	}
 
-	/**
-	 * Set up the {@link android.app.ActionBar}, if the API is available.
-	 */
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private void setupActionBar() {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {

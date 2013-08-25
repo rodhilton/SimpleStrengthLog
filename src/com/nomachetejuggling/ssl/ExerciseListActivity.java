@@ -45,15 +45,14 @@ import com.google.gson.reflect.TypeToken;
 import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.MuscleGroups;
 
-// -- Release 1.1
-//TODO: muscles are a json file too, current becomes defaults.  no ui to edit, but can edit by hand
+// -- Release 1.2
+//TODO: check mark on exercises done today (in list view) (this is tricky because that file is slow to load)
+//TODO: Metric/Imperial setting (this should change increment from 5 to 1) (release in more locations)
 
 // -- Future Release
 //FUTURE: Edit name of exercise
-//FUTURE: check mark on exercises done today (in list view) (this is tricky because that file is slow to load)
 //FUTURE: Load exercise list async
 //FUTURE: replace dialog progress bar with simple progress bar in log area
-//FUTURE: Metric/Imperial setting (this should change increment from 5 to 1)
 //FUTURE: "workout summary" feature with all of current day's stuff.  datepicker for other dates.
 //FUTURE: (maybe) full historical record for an exercise to see improvement.  should this be part of larger suite?
 //FUTURE: Filter should be a navigation dropdown, not a button
@@ -89,7 +88,7 @@ public class ExerciseListActivity extends ListActivity {
 			muscleGroups = (MuscleGroups) savedInstanceState.getSerializable("muscleGroups");
 			filter = savedInstanceState.getString("filter");
 		} else {
-			muscleGroups = Util.loadMuscleGroups(getResources());
+			muscleGroups = Util.loadMuscleGroups(getApplicationContext());
 			filter = "All";
 		}	
 	}	
@@ -299,6 +298,29 @@ public class ExerciseListActivity extends ListActivity {
 		dirty = false;
 	}
 
+	private void loadExercises() {
+		File file = Util.getExerciseFile(this.getApplicationContext());
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		Type collectionType = new TypeToken<Collection<Exercise>>() {}.getType();
+		List<Exercise> exercisesRead = new ArrayList<Exercise>();
+		String json;
+		try {
+			json = FileUtils.readFileToString(file, "UTF-8");
+			Log.d("IO", "Start Reading from " + file.getAbsolutePath() + "\n" + json);
+	
+			exercisesRead = gson.fromJson(json, collectionType);
+		} catch (IOException e) {
+			InputStream raw = getResources().openRawResource(R.raw.exerciselist_default);
+			exercisesRead = gson.fromJson(new InputStreamReader(raw), collectionType);
+			this.dirty = true; //Save this on exit
+		}
+		
+		Collections.sort(exercisesRead);
+		allExercises.clear();
+		allExercises.addAll(exercisesRead);
+		
+	}
+
 	private void displayExercises() {
 		ActionBar ab = getActionBar();
 		
@@ -321,29 +343,6 @@ public class ExerciseListActivity extends ListActivity {
 		}
 		this.exerciseAdapter.notifyDataSetChanged();
 
-	}
-
-	private void loadExercises() {
-		File file = Util.getExerciseFile(this.getApplicationContext());
-		Gson gson = new GsonBuilder().setPrettyPrinting().create();
-		Type collectionType = new TypeToken<Collection<Exercise>>() {}.getType();
-		List<Exercise> exercisesRead = new ArrayList<Exercise>();
-		String json;
-		try {
-			json = FileUtils.readFileToString(file, "UTF-8");
-			Log.d("IO", "Start Reading from " + file.getAbsolutePath() + "\n" + json);
-
-			exercisesRead = gson.fromJson(json, collectionType);
-		} catch (IOException e) {
-			InputStream raw = getResources().openRawResource(R.raw.exerciselist_default);
-			exercisesRead = gson.fromJson(new InputStreamReader(raw), collectionType);
-			this.dirty = true; //Save this on exit
-		}
-		
-		Collections.sort(exercisesRead);
-		allExercises.clear();
-		allExercises.addAll(exercisesRead);
-		
 	}
 
 	private static class ExerciseAdapter extends ArrayAdapter<Exercise> {
