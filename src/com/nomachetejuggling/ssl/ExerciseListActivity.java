@@ -8,10 +8,13 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.joda.time.LocalDate;
 
 import android.app.ActionBar;
 import android.app.AlertDialog;
@@ -43,16 +46,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.nomachetejuggling.ssl.model.Exercise;
+import com.nomachetejuggling.ssl.model.LogEntry;
 import com.nomachetejuggling.ssl.model.MuscleGroups;
 
 // -- Release 1.2
-//TODO: check mark on exercises done today (in list view) (this is tricky because that file is slow to load)
+//TODO: List and log activities should load without dialogs, in background
 //TODO: Metric/Imperial setting (this should change increment from 5 to 1) (release in more locations)
 
 // -- Future Release
-//FUTURE: Edit name of exercise
-//FUTURE: Load exercise list async
-//FUTURE: replace dialog progress bar with simple progress bar in log area
+//FUTURE: Edit name of exercise (tough because it has to spider all logs and rename there.. or at least warn people)
 //FUTURE: "workout summary" feature with all of current day's stuff.  datepicker for other dates.
 //FUTURE: (maybe) full historical record for an exercise to see improvement.  should this be part of larger suite?
 //FUTURE: Filter should be a navigation dropdown, not a button
@@ -64,6 +66,7 @@ public class ExerciseListActivity extends ListActivity {
 	private ArrayList<Exercise> allExercises;
 	private ArrayList<Exercise> displayExercises;
 	private boolean dirty;
+	public Set<String> doneExercices = new HashSet<String>();
 
 	private MuscleGroups muscleGroups;
 	private String filter;
@@ -92,7 +95,27 @@ public class ExerciseListActivity extends ListActivity {
 		} else {
 			muscleGroups = Util.loadMuscleGroups(getApplicationContext());
 			filter = "All";
-		}	
+		}
+		
+		//Read current workout exercises.  Kinda inefficient, it'd be better to get this, already hydrated, from the log activity
+		File dir = Util.getLogStorageDir(getApplicationContext());
+		String today = new LocalDate().toString("yyyy-MM-dd");
+		File currentLogFile = new File(dir, today+".json");
+		if(currentLogFile.exists()) {
+			Gson gson = new GsonBuilder().setPrettyPrinting().create();
+			Type collectionType = new TypeToken<Collection<LogEntry>>() {}.getType();
+			try {
+				String json = FileUtils.readFileToString(currentLogFile, "UTF-8");
+				List<LogEntry> logs = gson.fromJson(json,collectionType);
+				Set<String> currentExerciseSet = new HashSet<String>();
+				for(LogEntry entry: logs) {
+					currentExerciseSet.add(entry.exercise);
+				}
+				this.doneExercices = currentExerciseSet;
+			} catch(IOException e) {
+				Log.e("IO", "Couldn't read current log file in list view", e);
+			}
+		}
 	}	
 
 	@Override
@@ -362,8 +385,16 @@ public class ExerciseListActivity extends ListActivity {
 				row = LayoutInflater.from(getContext()).inflate(R.layout.list_exercises, parent, false);
 			}
 			final Exercise item = getItem(position);
+			ExerciseListActivity act = (ExerciseListActivity)mContext;
 			TextView text = (TextView) row.findViewById(R.id.line1);
-			text.setText(item.name);
+			if(act.doneExercices.contains(item.name)) {
+				int checkTextColor=mContext.getResources().getColor(R.color.checkMark);
+				String hexColor = String.format("#%06X", (0xFFFFFF & checkTextColor));
+				
+				text.setText(Html.fromHtml(StringEscapeUtils.escapeHtml3(item.name)+" <font color='"+hexColor+"'>&#x2713;</font>"));
+			} else {
+				text.setText(item.name);
+			}
 			
 			OnClickListener toggleFavoriteListener = new OnClickListener(){
 		        public void onClick(View v) {
@@ -385,6 +416,7 @@ public class ExerciseListActivity extends ListActivity {
 				muscleListView.setText("");
 				muscleListView.setVisibility(View.GONE);
 			}
+			
 			return row;
 		}
 	}
