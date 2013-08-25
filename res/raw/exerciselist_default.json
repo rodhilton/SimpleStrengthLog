@@ -1,0 +1,170 @@
+[
+  {
+    "name": "Barbell Squat",
+    "muscles": ["Quadriceps"]
+  },
+  {
+    "name": "Barbell Lunge",
+    "muscles": ["Quadriceps"]
+  },
+  {
+    "name": "Overhead Barbell Lunge",
+    "muscles": ["Quadriceps", "Gluteals"]
+  },
+  {
+    "name": "Leg Curl",
+    "muscles": ["Hamstrings"]
+  },
+  {
+    "name": "Hip Abductor",
+    "muscles": ["Gluteals"]
+  },
+  {
+    "name": "Hip Adductor",
+    "muscles": ["Thighs"]
+  },
+  {
+    "name": "Calf Raise",
+    "muscles": ["Calfs"]
+  },
+  {
+    "name": "Deadlift",
+    "muscles": ["Gluteals", "Quadriceps", "Hamstrings", "Abdominals", "Trapezius", "Erector Spinae"]
+  },
+  {
+    "name": "Assisted Chin-Up",
+    "muscles": ["Latissmus Dorsi", "Biceps", "Teres Major"]
+  },
+  {
+    "name": "Lat Pull-Down",
+    "muscles": ["Latissmus Dorsi"]
+  },
+  {
+    "name": "Seated Row",
+    "muscles": ["Latissmus Dorsi"]
+  },
+  {
+    "name": "Pulley Row",
+    "muscles": ["Latissmus Dorsi"]
+  },
+  {
+    "name": "Bent-Over Row",
+    "muscles": ["Latissmus Dorsi", "Teres Major", "Biceps", "Gluteals"]
+  },
+  {
+    "name": "Barbell Pull-Over",
+    "muscles": ["Pectorals", "Latissmus Dorsi", "Triceps"]
+  },
+  {
+    "name": "Back Extension",
+    "muscles": ["Erector Spinae", "Gluteals", "Hamstrings"]
+  },
+  {
+    "name": "Prone Row",
+    "muscles": ["Trapezius"]
+  },
+  {
+    "name": "Barbell Bench Press",
+    "muscles": ["Pectorals"]
+  },
+  {
+    "name": "Incline Barbell Bench Press",
+    "muscles": ["Pectorals", "Triceps"]
+  },
+  {
+    "name": "Incline Dumbbell Fly",
+    "muscles": ["Pectorals"]
+  },
+  {
+    "name": "Cable Cross-Over",
+    "muscles": ["Pectorals"]
+  },
+  {
+    "name": "Military Barbell Press",
+    "muscles": ["Deltoids"]
+  },
+  {
+    "name": "Dumbbell Shoulder Press",
+    "muscles": ["Deltoids"]
+  },
+  {
+    "name": "Upright Row",
+    "muscles": ["Trapezius", "Deltoids"]
+  },
+  {
+    "name": "Shoulder Shrug",
+    "muscles": ["Trapezius"]
+  },
+  {
+    "name": "Front Dumbbell Raise",
+    "muscles": ["Deltoids"]
+  },
+  {
+    "name": "Lateral Dumbbell Raise",
+    "muscles": ["Deltoids"]
+  },
+  {
+    "name": "Front Dumbbell Raise",
+    "muscles": ["Deltoids"]
+  },
+  {
+    "name": "Scarecrow Rotation",
+    "muscles": ["Infraspinatus"]
+  },
+  {
+    "name": "External Rotation",
+    "muscles": ["Infraspinatus"]
+  },
+  {
+    "name": "Internal Rotation",
+    "muscles": ["Pectorals", "Infraspinatus"]
+  },
+  {
+    "name": "Triceps Extension",
+    "muscles": ["Triceps"]
+  },
+  {
+    "name": "Triceps Kickback",
+    "muscles": ["Triceps"]
+  },
+  {
+    "name": "Triceps Push-Down",
+    "muscles": ["Triceps"]
+  },
+  {
+    "name": "Barbell Curl",
+    "muscles": ["Biceps"]
+  },
+  {
+    "name": "Hammer Dumbbell Curl",
+    "muscles": ["Biceps"]
+  },
+  {
+    "name": "Concentration Curl",
+    "muscles": ["Biceps"]
+  },
+  {
+    "name": "Wrist Extension",
+    "muscles": ["Wrists"]
+  },
+  {
+    "name": "Reverse Grip Barbell Curl",
+    "muscles": ["Forearms", "Biceps"]
+  },
+  {
+    "name": "Abdominal Crunch",
+    "muscles": ["Abdominals"]
+  },
+  {
+    "name": "Machine Crunch",
+    "muscles": ["Abdominals"]
+  },
+  {
+    "name": "Kettlebell Suitcase Deadlift",
+    "muscles": ["Quadriceps", "Obliques"]
+  },
+  {
+    "name": "Woodchop",
+    "muscles": ["Abdominals"]
+  }
+]

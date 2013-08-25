@@ -3,5 +3,6 @@
     <item android:id="@+id/logContextMenu" android:title="@string/context_menu_log"></item>
     <item android:id="@+id/favoriteContextMenu" android:title="@string/context_menu_favorite"></item>
     <item android:id="@+id/unfavoriteContextMenu" android:title="@string/context_menu_unfavorite" android:visible="false"></item>
+    <item android:id="@+id/editContextMenu" android:title="@string/context_menu_edit"></item>
     <item android:id="@+id/deleteContextMenu" android:title="@string/context_menu_delete"></item>   
 </menu>

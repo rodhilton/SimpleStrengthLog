@@ -2,6 +2,8 @@ package com.nomachetejuggling.ssl;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,13 +45,12 @@ import com.google.gson.reflect.TypeToken;
 import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.MuscleGroups;
 
-// -- Release 1.0
-//TODO: Long press to Edit exercise (can't change name though)
-//TODO: Context menu on long press: ["Log" (default click), "Favorite/Unfavorite" (secondary), "Edit", "Delete"]
-//TODO: default file of exercises (must have favorite feature first)
+// -- Release 1.1
+//TODO: muscles are a json file too, current becomes defaults.  no ui to edit, but can edit by hand
 
 // -- Future Release
 //FUTURE: Edit name of exercise
+//FUTURE: check mark on exercises done today (in list view) (this is tricky because that file is slow to load)
 //FUTURE: Load exercise list async
 //FUTURE: replace dialog progress bar with simple progress bar in log area
 //FUTURE: Metric/Imperial setting (this should change increment from 5 to 1)
@@ -67,13 +68,14 @@ public class ExerciseListActivity extends ListActivity {
 	private String filter;
 
 	private static final int ADD_EXERCISE_REQUEST = 0;
+	private static final int EDIT_EXERCISE_REQUEST = 1;
 
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_exercise_list);
-
+		
 		allExercises = new ArrayList<Exercise>();
 		displayExercises = new ArrayList<Exercise>();
 		dirty = false;
@@ -188,6 +190,12 @@ public class ExerciseListActivity extends ListActivity {
 	    		markFavorite(selectedExercise, false);
 	    		this.exerciseAdapter.notifyDataSetChanged();
 	    		return true;
+	    	case R.id.editContextMenu :
+	    		Intent intent = new Intent(this, AddActivity.class);
+				intent.putExtra("muscles", this.muscleGroups.getMuscles().toArray(new String[] {}));
+				intent.putExtra("exercise", selectedExercise);
+				startActivityForResult(intent, EDIT_EXERCISE_REQUEST);
+				return true;
 	    }
 	    return false;
 	}
@@ -202,6 +210,26 @@ public class ExerciseListActivity extends ListActivity {
 					Exercise newExercise = (Exercise) extras.getSerializable("newExercise");
 					addExercise(newExercise);
 				}
+			}
+		} else if(requestCode == EDIT_EXERCISE_REQUEST) {
+			if(resultCode == RESULT_OK) {
+				Bundle extras = intent.getExtras();
+				if (extras != null) {
+					Exercise editedExercise = (Exercise) extras.getSerializable("newExercise");
+					modifyExercise(editedExercise);
+				}
+			}
+		}
+	}
+
+	private void modifyExercise(Exercise editedExercise) {
+		for(Exercise exercise: allExercises) {
+			if(exercise.name.equals(editedExercise.name)) {
+				//Modify the existing one, because there might be handles to it elsewhere
+				exercise.copyFrom(editedExercise);
+				this.dirty = true;
+				saveExercises();
+				this.displayExercises();
 			}
 		}
 	}
@@ -297,23 +325,25 @@ public class ExerciseListActivity extends ListActivity {
 
 	private void loadExercises() {
 		File file = Util.getExerciseFile(this.getApplicationContext());
-
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		Type collectionType = new TypeToken<Collection<Exercise>>() {}.getType();
+		List<Exercise> exercisesRead = new ArrayList<Exercise>();
 		String json;
 		try {
 			json = FileUtils.readFileToString(file, "UTF-8");
-			Gson gson = new GsonBuilder().setPrettyPrinting().create();
 			Log.d("IO", "Start Reading from " + file.getAbsolutePath() + "\n" + json);
 
-			Type collectionType = new TypeToken<Collection<Exercise>>() {
-			}.getType();
-			List<Exercise> exercisesRead = gson.fromJson(json, collectionType);
-			Collections.sort(exercisesRead);
-			allExercises.clear();
-			allExercises.addAll(exercisesRead);
+			exercisesRead = gson.fromJson(json, collectionType);
 		} catch (IOException e) {
-			// Ignore, a missing file is either an unmounted SD Card
-			// (unrecoverable) or a first-time run.
+			InputStream raw = getResources().openRawResource(R.raw.exerciselist_default);
+			exercisesRead = gson.fromJson(new InputStreamReader(raw), collectionType);
+			this.dirty = true; //Save this on exit
 		}
+		
+		Collections.sort(exercisesRead);
+		allExercises.clear();
+		allExercises.addAll(exercisesRead);
+		
 	}
 
 	private static class ExerciseAdapter extends ArrayAdapter<Exercise> {

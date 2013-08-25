@@ -60,7 +60,7 @@ public class LogActivity extends Activity {
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 		
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean keepScreenOnSetting = settings.getBoolean("screenOn", false);
+        boolean keepScreenOnSetting = settings.getBoolean("screenOn", true);
         
         if(keepScreenOnSetting) {
         	getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -402,13 +402,22 @@ public class LogActivity extends Activity {
 		saveAndRestButton.setEnabled(true);
 		undoButton.setEnabled(true);
 		
-		if(!cancelled) {	
-			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-			v.vibrate(new long[]{160, 228, 13,228, 13,228, 13,228, 13,228}, -1);
-	
-			MediaPlayer mPlayer = MediaPlayer.create(this.getApplicationContext(), R.raw.fight);
-			mPlayer.setVolume(.6f, .6f);  //Let's not go crazy here, probably listening to music.
-			mPlayer.start();
+		if(!cancelled) {
+			SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+	        boolean vibrateAfterRest = settings.getBoolean("vibrateAfterRest", true);	        
+	        boolean soundAfterRest = settings.getBoolean("soundAfterRest", true);
+
+	        if(soundAfterRest) {
+	        	MediaPlayer mPlayer = MediaPlayer.create(this.getApplicationContext(), R.raw.fight);
+	        	mPlayer.setVolume(.5f, .5f);  //Let's not go crazy here, probably listening to music.
+	        	mPlayer.start();
+	        }
+	        
+	        if(vibrateAfterRest) {
+	        	Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+	        	v.vibrate(new long[]{160, 228, 13,228, 13,228, 13,228, 13,228}, -1);
+	        }
+	      
 		}
 	}
 

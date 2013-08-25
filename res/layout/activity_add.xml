@@ -89,6 +89,20 @@
 
     </FrameLayout>
 
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/activity_vertical_margin" >
+
+        <CheckBox
+            android:id="@+id/favoriteCheckBoxAdd"
+            style="?android:attr/starStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/addFavoriteCheckBoxLabel" />
+
+    </FrameLayout>
+
         </LinearLayout>
     </ScrollView>
     
