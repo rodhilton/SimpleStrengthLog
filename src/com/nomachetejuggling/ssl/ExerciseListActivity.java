@@ -27,10 +27,12 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -44,7 +46,6 @@ import com.nomachetejuggling.ssl.model.MuscleGroups;
 // -- Release 1.0
 //TODO: Long press to Edit exercise (can't change name though)
 //TODO: Context menu on long press: ["Log" (default click), "Favorite/Unfavorite" (secondary), "Edit", "Delete"]
-//TODO: Favorite (part of long press menu, later a separate star)
 //TODO: default file of exercises (must have favorite feature first)
 
 // -- Future Release
@@ -88,7 +89,7 @@ public class ExerciseListActivity extends ListActivity {
 		} else {
 			muscleGroups = Util.loadMuscleGroups(getResources());
 			filter = "All";
-		}
+		}	
 	}	
 
 	@Override
@@ -121,6 +122,13 @@ public class ExerciseListActivity extends ListActivity {
 		
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.exercise_list_context, menu);
+		
+		MenuItem favorite = (MenuItem) menu.findItem(R.id.favoriteContextMenu);
+		MenuItem unfavorite = (MenuItem) menu.findItem(R.id.unfavoriteContextMenu);
+		
+		favorite.setVisible(!selectedExercise.favorite);
+		unfavorite.setVisible(selectedExercise.favorite);
+		
 		super.onCreateContextMenu(menu, v, menuInfo); 
 	}
 
@@ -172,6 +180,14 @@ public class ExerciseListActivity extends ListActivity {
 	    	case R.id.deleteContextMenu :
 	    		deleteExercise(selectedExercise);
 	    		return true;
+	    	case R.id.favoriteContextMenu :
+	    		markFavorite(selectedExercise, true);
+	    		this.exerciseAdapter.notifyDataSetChanged();
+	    		return true;
+	    	case R.id.unfavoriteContextMenu :
+	    		markFavorite(selectedExercise, false);
+	    		this.exerciseAdapter.notifyDataSetChanged();
+	    		return true;
 	    }
 	    return false;
 	}
@@ -193,6 +209,15 @@ public class ExerciseListActivity extends ListActivity {
 	public void selectFilter(CharSequence title) {
 		this.filter = title.toString();
 		displayExercises();
+	}
+	
+
+	protected void markFavorite(Exercise exercise, boolean favorite) {
+		if(favorite != exercise.favorite) {
+			exercise.favorite = favorite;
+			dirty = true;
+			saveExercises();
+		}
 	}
 	
 	private void addExercise(Exercise newExercise) {
@@ -253,6 +278,11 @@ public class ExerciseListActivity extends ListActivity {
 		if (this.filter == null || this.filter.equals("All")) {
 			displayExercises.addAll(allExercises);
 			ab.setSubtitle(null);
+		} else if(filter.equals("Favorites")) {
+			for (Exercise exercise : allExercises) {
+				if (exercise.favorite) displayExercises.add(exercise);
+			}
+			ab.setSubtitle("Favorites");
 		} else {
 			for (Exercise exercise : allExercises) {
 				if (muscleGroups.contains(filter, exercise)) {
@@ -287,8 +317,11 @@ public class ExerciseListActivity extends ListActivity {
 	}
 
 	private static class ExerciseAdapter extends ArrayAdapter<Exercise> {
+		Context mContext;
+		
 		public ExerciseAdapter(Context context, int layout, int resId, List<Exercise> items) {
 			super(context, layout, resId, items);
+			mContext = context;
 		}
 
 		@Override
@@ -297,9 +330,21 @@ public class ExerciseListActivity extends ListActivity {
 			if (row == null) {
 				row = LayoutInflater.from(getContext()).inflate(R.layout.list_exercises, parent, false);
 			}
-			Exercise item = getItem(position);
+			final Exercise item = getItem(position);
 			TextView text = (TextView) row.findViewById(R.id.line1);
 			text.setText(item.name);
+			
+			OnClickListener toggleFavoriteListener = new OnClickListener(){
+		        public void onClick(View v) {
+		        	ExerciseListActivity activity = (ExerciseListActivity)Util.getActivityFromContext(mContext);
+		        	CheckBox checkBox = (CheckBox) v;
+		        	activity.markFavorite(item, checkBox.isChecked());
+		        }
+			};
+			
+			CheckBox favoriteCheckBox = (CheckBox) row.findViewById(R.id.favoriteCheckbox);
+			favoriteCheckBox.setChecked(item.favorite);
+			favoriteCheckBox.setOnClickListener(toggleFavoriteListener);
 
 			TextView muscleListView = (TextView) row.findViewById(R.id.muscleList);
 			if (item.muscles != null && item.muscles.length > 0) {

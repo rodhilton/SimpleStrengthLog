@@ -26,6 +26,8 @@
     <string name="action_settings">Settings</string>    
     <string name="menu_filter">Filter</string>
     <string name="context_menu_log">Log</string>
+    <string name="context_menu_favorite">Favorite</string>
+    <string name="context_menu_unfavorite">Unfavorite</string>
     <string name="context_menu_delete">Delete</string>
 
 </resources>

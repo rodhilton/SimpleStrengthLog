@@ -2,9 +2,7 @@ package com.nomachetejuggling.ssl;
 
 import com.nomachetejuggling.ssl.model.MuscleGroups;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.view.ActionProvider;
 import android.view.MenuItem;
 import android.view.MenuItem.OnMenuItemClickListener;
@@ -43,23 +41,11 @@ public class ExerciseListFilterActionProvider extends ActionProvider implements 
 
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
-		ExerciseListActivity parent = (ExerciseListActivity) getActivity();
+		ExerciseListActivity parent = (ExerciseListActivity) Util.getActivityFromContext(mContext);
 		parent.selectFilter(item.getTitle());
 		return true;
 	}
 	
-	private Activity getActivity() {
-        Context context = mContext;
-        while (context instanceof ContextWrapper && !(context instanceof Activity)) {
-            context = ((ContextWrapper) context).getBaseContext();
-        }
-        if (!(context instanceof Activity)) {
-            throw new IllegalStateException("The Context is not an Activity.");
-        }
-
-        return (Activity) context;
-    }
-
 	public void setMuscleGroups(MuscleGroups muscleGroups) {
 		this.muscleGroups = muscleGroups;	
 	}
