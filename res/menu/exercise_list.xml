@@ -16,6 +16,6 @@
 		android:showAsAction="always"
 		android:icon="@drawable/ic_menu_moreoverflow"
 		android:title="@string/menu_filter"
-		android:actionProviderClass="com.nomachetejuggling.ssl.CustomActionProvider"/>
+		android:actionProviderClass="com.nomachetejuggling.ssl.ExerciseListFilterActionProvider"/>
 
 </menu>

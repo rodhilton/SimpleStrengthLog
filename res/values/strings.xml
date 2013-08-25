@@ -12,6 +12,7 @@
     <string name="empty_exercise_list">Add exercises here, then select them to log them as part of a workout.</string>
     <string name="error_cannot_save_exercises">Unable to save exercises, SD card not mounted or unwritable.</string>
     <string name="error_cannot_save_log">Unable to save log, SD card not mounted or unwritable.</string>
+    <string name="title_exercise_list">Strength Log</string>
     <string name="title_activity_log">Log</string>
     <string name="currentLogLabel">Today:</string>
     <string name="previousLogLabel">Previously:</string>

@@ -1,27 +1,24 @@
 package com.nomachetejuggling.ssl;
 
 import java.util.ArrayList;
-import java.util.List;
 
-import com.nomachetejuggling.ssl.model.Exercise;
+import org.apache.commons.lang3.StringUtils;
 
-import android.os.Bundle;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.util.Log;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.os.Build;
+import android.os.Bundle;
+import android.support.v4.app.NavUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.support.v4.app.NavUtils;
-import android.annotation.TargetApi;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.os.Build;
 
-//TODO: only allow up to a certain value for rest time.
-//TODO: basic validation.  non-empty name, min and max vals for rest time, no negs
+import com.nomachetejuggling.ssl.model.Exercise;
 
 public class AddActivity extends Activity {
 	
@@ -82,18 +79,38 @@ public class AddActivity extends Activity {
 	}
 	
 	public void saveExercise() {
+		boolean valid = true;
+		
 		TextView nameText = (TextView) this.findViewById(R.id.nameText);
 		TextView restText = (TextView) this.findViewById(R.id.restTimeText);
 		
-		Exercise newExercise = new Exercise();
-		newExercise.name=(nameText.getText().toString());
-		newExercise.restTime=Integer.parseInt(restText.getText().toString());
-		newExercise.muscles = this.currentMuscles;
+		if( nameText.getText().toString().length() == 0 ) { 
+			nameText.setError( "Exercise name is required!" );
+			valid = false;
+		}
 		
-		Intent intent = new Intent();
-		intent.putExtra("newExercise",newExercise);
-		setResult(RESULT_OK,intent);
-		finish();	
+		if(!StringUtils.isNumeric(restText.getText())) {
+			restText.setError("Rest time must be a number");
+			valid = false;
+		}
+		
+		int restTime = Integer.parseInt(restText.getText().toString());
+		if(restTime <= 0 || restTime > 300) {
+			restText.setError("Rest time must be between 1 and 300");
+			valid = false;
+		}
+		
+		if(valid) {
+			Exercise newExercise = new Exercise();
+			newExercise.name=nameText.getText().toString();
+			newExercise.restTime=restTime;
+			newExercise.muscles = this.currentMuscles;
+			
+			Intent intent = new Intent();
+			intent.putExtra("newExercise",newExercise);
+			setResult(RESULT_OK,intent);
+			finish();	
+		}
 	}
 	
 	private void setCurrentMuscles(String[] muscles) {

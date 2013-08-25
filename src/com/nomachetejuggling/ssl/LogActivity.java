@@ -2,43 +2,28 @@ package com.nomachetejuggling.ssl;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalTime;
 import org.joda.time.Period;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-
-import com.nomachetejuggling.ssl.model.Exercise;
-import com.nomachetejuggling.ssl.model.LogEntry;
-
+import android.app.ActionBar;
+import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.media.MediaPlayer;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
-import android.app.ActionBar;
-import android.app.Activity;
-import android.app.ProgressDialog;
-import android.content.Context;
-import android.content.SharedPreferences;
+import android.support.v4.app.NavUtils;
 import android.text.Html;
 import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
@@ -49,10 +34,14 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.support.v4.app.NavUtils;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.nomachetejuggling.ssl.model.Exercise;
+import com.nomachetejuggling.ssl.model.LogEntry;
+import com.nomachetejuggling.ssl.model.LogSet;
 
 //TODO: clean this code up, lots of duplication
-//FIXME: currently if you change the scrollers, then rotate, it loses your value and restores based on log.  need to have a listener to mark scrollers dirty and save/restore from it if there
 
 public class LogActivity extends Activity {
 
@@ -61,6 +50,8 @@ public class LogActivity extends Activity {
 	private Exercise currentExercise;
 	private CountDownTimer restTimer;
 	private int restSecsLeft = -1;
+	private static final int WEIGHT_FACTOR = 5;
+	private boolean spinnersAlreadySet = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -84,14 +75,13 @@ public class LogActivity extends Activity {
 		currentExercise = (Exercise) getIntent().getExtras().getSerializable("exercise");
 
 		int numValues = 100;
-		int PICKER_RANGE = 5;
 
 		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
 		weightPicker.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
 
 		String[] displayedValues = new String[numValues];
 		// Populate the array
-		for (int i = 0; i < numValues; i++) displayedValues[i] = String.valueOf(PICKER_RANGE * (i + 1)) + " lbs";
+		for (int i = 0; i < numValues; i++) displayedValues[i] = String.valueOf(WEIGHT_FACTOR * (i + 1)) + " lbs";
 
 		weightPicker.setMinValue(0);
 		weightPicker.setMaxValue(displayedValues.length - 1);
@@ -134,11 +124,6 @@ public class LogActivity extends Activity {
 		
 		new LoadLogsTask(this).execute(currentExercise, dir);
 	}
-//
-//	@Override
-//	public boolean onCreateOptionsMenu(Menu menu) {
-//		return true;
-//	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -152,7 +137,61 @@ public class LogActivity extends Activity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
+	
+	@Override
+	public void onBackPressed() {
+		if(this.restTimer != null) {
+			this.restTimer.cancel();
+			this.restTimer = null;
+			stopResting(true);
+		} else {
+			super.onBackPressed();
+		}
+	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+		super.onSaveInstanceState(savedInstanceState);
 
+		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
+		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
+
+		savedInstanceState.putInt("WeightPickerPosition", weightPicker.getValue());
+		savedInstanceState.putInt("RepsPickerPosition", repsPicker.getValue());
+		
+		if(this.restTimer != null) {
+			restTimer.cancel();
+			savedInstanceState.putInt("RestTimeRemaining", this.restSecsLeft);
+		} else {
+			savedInstanceState.putInt("RestTimeRemaining", -1);
+		}
+		
+		Button undoButton = (Button) findViewById(R.id.undoButton);
+		savedInstanceState.putBoolean("UndoEnabled", undoButton.isEnabled());
+	}
+
+	@Override
+	public void onRestoreInstanceState(Bundle savedInstanceState) {
+		super.onRestoreInstanceState(savedInstanceState);
+		
+		int weightPickerPosition = savedInstanceState.getInt("WeightPickerPosition");
+		int repsPickerPosition = savedInstanceState.getInt("RepsPickerPosition");
+
+		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
+		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
+
+		weightPicker.setValue(weightPickerPosition);
+		repsPicker.setValue(repsPickerPosition);
+		spinnersAlreadySet = true;
+		
+		if(savedInstanceState.containsKey("RestTimeRemaining")) {
+			restFor(savedInstanceState.getInt("RestTimeRemaining"));
+		}
+		
+		Button undoButton = (Button) findViewById(R.id.undoButton);
+		undoButton.setEnabled(savedInstanceState.getBoolean("UndoEnabled"));
+	}
+	
 	public void clickLogSet(View view) {
 		LogEntry log = currentEntry();
 		this.currentLogs.add(log);
@@ -175,63 +214,8 @@ public class LogActivity extends Activity {
 		this.currentLogs.remove(this.currentLogs.size()-1);
 		this.persistCurrentLogs();
 	}
-	
-	@Override
-	public void onBackPressed() {
-		if(this.restTimer != null) {
-			this.restTimer.cancel();
-			this.restTimer = null;
-			stopResting(true);
-		} else {
-			super.onBackPressed();
-		}
-	}
-	
-	@Override
-	public void onSaveInstanceState(Bundle savedInstanceState) {
-		super.onSaveInstanceState(savedInstanceState);
 
-		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
-		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
-
-		savedInstanceState.putInt("WeightPickerPosition",
-				weightPicker.getValue());
-		savedInstanceState.putInt("RepsPickerPosition", repsPicker.getValue());
-		
-		if(this.restTimer != null) {
-			restTimer.cancel();
-			savedInstanceState.putInt("RestTimeRemaining", this.restSecsLeft);
-		} else {
-			savedInstanceState.putInt("RestTimeRemaining", -1);
-		}
-		
-		Button undoButton = (Button) findViewById(R.id.undoButton);
-		savedInstanceState.putBoolean("UndoEnabled", undoButton.isEnabled());
-	}
-
-	@Override
-	public void onRestoreInstanceState(Bundle savedInstanceState) {
-		super.onRestoreInstanceState(savedInstanceState);
-		// Restore UI state from the savedInstanceState.
-		// This bundle has also been passed to onCreate.
-		int weightPickerPosition = savedInstanceState.getInt("WeightPickerPosition");
-		int repsPickerPosition = savedInstanceState.getInt("RepsPickerPosition");
-
-		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
-		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
-
-		weightPicker.setValue(weightPickerPosition);
-		repsPicker.setValue(repsPickerPosition);
-		
-		if(savedInstanceState.containsKey("RestTimeRemaining")) {
-			restFor(savedInstanceState.getInt("RestTimeRemaining"));
-		}
-		
-		Button undoButton = (Button) findViewById(R.id.undoButton);
-		undoButton.setEnabled(savedInstanceState.getBoolean("UndoEnabled"));
-	}
-
-	private void loadCurrentLogs(LogSet logSet) {
+	public void loadCurrentLogs(LogSet logSet) {
 		currentLogs.clear();
 		currentLogs.addAll(logSet.currentLogs);
 
@@ -245,35 +229,37 @@ public class LogActivity extends Activity {
 			textView.setText(relative + ":");
 		}
 
-		LogEntry lastEntry = null;
-		if(currentLogs.size() > 0) {
-			for(int i=currentLogs.size()-1;i>=0 && lastEntry == null;i--) {
-				LogEntry entry = currentLogs.get(i);
-				if(entry.exercise.equals(currentExercise.name)) {
-					lastEntry = entry;
+		if(!spinnersAlreadySet) {
+			LogEntry lastEntry = null;
+			if(currentLogs.size() > 0) {
+				for(int i=currentLogs.size()-1;i>=0 && lastEntry == null;i--) {
+					LogEntry entry = currentLogs.get(i);
+					if(entry.exercise.equals(currentExercise.name)) {
+						lastEntry = entry;
+					}
+				}
+			} 
+			
+			if( lastEntry == null && previousLogs.size() > 0){
+				for(int i=previousLogs.size()-1;i>=0 && lastEntry == null;i--) {
+					LogEntry entry = previousLogs.get(i);
+					if(entry.exercise.equals(currentExercise.name)) {
+						lastEntry = entry;
+					}
 				}
 			}
-		} 
+			
+			if(lastEntry != null) {
+				int weightPosition = (lastEntry.weight / WEIGHT_FACTOR) - 1;
+				int repsPosition = (lastEntry.reps) - 1;
 		
-		if( lastEntry == null && previousLogs.size() > 0){
-			for(int i=previousLogs.size()-1;i>=0 && lastEntry == null;i--) {
-				LogEntry entry = previousLogs.get(i);
-				if(entry.exercise.equals(currentExercise.name)) {
-					lastEntry = entry;
-				}
+				NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
+				NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
+		
+				weightPicker.setValue(weightPosition);
+				repsPicker.setValue(repsPosition);
+	
 			}
-		}
-		
-		if(lastEntry != null) {
-			int weightPosition = (lastEntry.weight / 5) - 1;
-			int repsPosition = (lastEntry.reps) - 1;
-	
-			NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
-			NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
-	
-			weightPicker.setValue(weightPosition);
-			repsPicker.setValue(repsPosition);
-
 		}
 		this.showCurrentLogs();
 	}
@@ -350,89 +336,13 @@ public class LogActivity extends Activity {
 	}
 
 
-	private static class LogSet {
-		public List<LogEntry> currentLogs = new ArrayList<LogEntry>();
-		public List<LogEntry> previousLogs = new ArrayList<LogEntry>();
-		public LocalDate previousDate = null;
-	}
-
-	private static class LoadLogsTask extends AsyncTask<Object, Void, LogSet> {
-
-		private static ProgressDialog dialog;
-		private LogActivity act;
-
-		public LoadLogsTask(LogActivity act) {
-			this.act = act;
-		}
-
-		@Override
-		protected void onPreExecute() {
-			super.onPreExecute();
-			dialog = ProgressDialog.show(act, "Please wait", "Loading logs");
-		}
-
-		@Override
-		protected LogSet doInBackground(Object... params) {
-			Exercise currentExercise = (Exercise)params[0];
-			File dir = (File)params[1];
-			
-			String today = new LocalDate().toString("yyyy-MM-dd");
-
-			try {
-				File[] files = dir.listFiles();
-
-				Arrays.sort(files, new Comparator<File>() {
-					public int compare(File f1, File f2) {
-						return f2.getName().compareTo(f1.getName());
-					}
-				});
-				
-				Gson gson = new GsonBuilder().setPrettyPrinting().create();
-				LogSet logSet = new LogSet();
-				Type collectionType = new TypeToken<Collection<LogEntry>>() {}.getType();
-				DateTimeFormatter pattern = DateTimeFormat.forPattern("yyyy-MM-dd");
-				
-				for (int i = 0; i < 50 && i < files.length && logSet.previousLogs.size() == 0; i++) {
-					File file = files[i];
-					String json = FileUtils.readFileToString(file, "UTF-8");
-					List<LogEntry> logs = gson.fromJson(json,collectionType);
-					if (file.getName().equals(today + ".json")) {
-						logSet.currentLogs = logs;
-					} else {
-						for (LogEntry entry : logs) {
-							if (entry.exercise.equals(currentExercise.name)) {
-								logSet.previousLogs = logs;
-								logSet.previousDate = LocalDate.parse(file.getName().substring(0,10), pattern);
-							}
-						}
-					}
-				}
-
-				return logSet;
-			} catch (IOException e) {
-				Log.e("IO", "Problem", e);
-				return new LogSet();
-			}
-
-		}
-
-		@Override
-		protected void onPostExecute(LogSet result) {
-			super.onPostExecute(result);
-			act.loadCurrentLogs(result);
-			dialog.dismiss();
-		}
-
-	}
-
-
 	private LogEntry currentEntry() {
 		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
 		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
 
 		LogEntry log = new LogEntry();
 		log.exercise = currentExercise.name;
-		log.weight = ((weightPicker.getValue() + 1) * 5);
+		log.weight = ((weightPicker.getValue() + 1) * WEIGHT_FACTOR);
 		log.reps = (repsPicker.getValue() + 1);
 		log.time = new LocalTime().toString(ISODateTimeFormat.time());
 		return log;
@@ -496,8 +406,7 @@ public class LogActivity extends Activity {
 			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 			v.vibrate(new long[]{160, 228, 13,228, 13,228, 13,228, 13,228}, -1);
 	
-			MediaPlayer mPlayer = MediaPlayer.create(this.getApplicationContext(),
-					R.raw.fight);
+			MediaPlayer mPlayer = MediaPlayer.create(this.getApplicationContext(), R.raw.fight);
 			mPlayer.setVolume(.6f, .6f);  //Let's not go crazy here, probably listening to music.
 			mPlayer.start();
 		}

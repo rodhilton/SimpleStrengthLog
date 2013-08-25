@@ -5,23 +5,18 @@ import com.nomachetejuggling.ssl.model.MuscleGroups;
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.util.Log;
 import android.view.ActionProvider;
 import android.view.MenuItem;
 import android.view.MenuItem.OnMenuItemClickListener;
 import android.view.SubMenu;
 import android.view.View;
-import android.widget.Toast;
 
-public class CustomActionProvider extends ActionProvider implements OnMenuItemClickListener {
+public class ExerciseListFilterActionProvider extends ActionProvider implements OnMenuItemClickListener {
 
-	static final int LIST_LENGTH = 3;
-
-	Context mContext;
-
+	private Context mContext;
 	private MuscleGroups muscleGroups;
 
-	public CustomActionProvider(Context context) {
+	public ExerciseListFilterActionProvider(Context context) {
 		super(context);
 		mContext = context;
 	}
@@ -29,11 +24,6 @@ public class CustomActionProvider extends ActionProvider implements OnMenuItemCl
 	@Override
 	public View onCreateActionView() {		
 		return null;
-	}
-
-	@Override
-	public boolean onPerformDefaultAction() {
-		return super.onPerformDefaultAction();
 	}
 
 	@Override
@@ -59,21 +49,18 @@ public class CustomActionProvider extends ActionProvider implements OnMenuItemCl
 	}
 	
 	private Activity getActivity() {
-        // Gross way of unwrapping the Activity so we can get the FragmentManager
         Context context = mContext;
         while (context instanceof ContextWrapper && !(context instanceof Activity)) {
             context = ((ContextWrapper) context).getBaseContext();
         }
         if (!(context instanceof Activity)) {
-            throw new IllegalStateException("The MediaRouteActionProvider's Context " +
-                    "is not an Activity.");
+            throw new IllegalStateException("The Context is not an Activity.");
         }
 
         return (Activity) context;
     }
 
 	public void setMuscleGroups(MuscleGroups muscleGroups) {
-		this.muscleGroups = muscleGroups;
-		
+		this.muscleGroups = muscleGroups;	
 	}
 }
