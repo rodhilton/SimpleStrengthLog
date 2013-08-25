@@ -22,6 +22,7 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Html;
 import android.util.Log;
@@ -50,15 +51,15 @@ import com.nomachetejuggling.ssl.model.LogEntry;
 import com.nomachetejuggling.ssl.model.MuscleGroups;
 
 // -- Release 1.2
-//TODO: List and log activities should load without dialogs, in background
-//TODO: Metric/Imperial setting (this should change increment from 5 to 1) (release in more locations)
+//TODO: Log should use same pattern, spinner in view
 
 // -- Future Release
+//FUTURE: Metric/Imperial setting (this should change increment from 5 to 1) (release in more locations)
 //FUTURE: Edit name of exercise (tough because it has to spider all logs and rename there.. or at least warn people)
 //FUTURE: "workout summary" feature with all of current day's stuff.  datepicker for other dates.
 //FUTURE: (maybe) full historical record for an exercise to see improvement.  should this be part of larger suite?
 //FUTURE: Filter should be a navigation dropdown, not a button
-
+//FUTURE: minor view issues in list... long names and long muscle lists overlap the star... checkmark too
 //FIXME: low priority, but if you started working out at 11:58pm and did 4 sets, they'd be logged to one file.. then if you do a 5th at 12:01 am, all 5 would be logged there, duplicating the 4.
 
 public class ExerciseListActivity extends ListActivity {
@@ -67,6 +68,7 @@ public class ExerciseListActivity extends ListActivity {
 	private ArrayList<Exercise> displayExercises;
 	private boolean dirty;
 	public Set<String> doneExercices = new HashSet<String>();
+	private boolean loaded = false;
 
 	private MuscleGroups muscleGroups;
 	private String filter;
@@ -77,8 +79,11 @@ public class ExerciseListActivity extends ListActivity {
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+		super.onCreate(savedInstanceState);		
 		setContentView(R.layout.activity_exercise_list);
+		
+		getListView().setVisibility(View.INVISIBLE);
+		findViewById(R.id.linlaHeaderProgress).setVisibility(View.VISIBLE);
 		
 		allExercises = new ArrayList<Exercise>();
 		displayExercises = new ArrayList<Exercise>();
@@ -97,25 +102,8 @@ public class ExerciseListActivity extends ListActivity {
 			filter = "All";
 		}
 		
-		//Read current workout exercises.  Kinda inefficient, it'd be better to get this, already hydrated, from the log activity
-		File dir = Util.getLogStorageDir(getApplicationContext());
-		String today = new LocalDate().toString("yyyy-MM-dd");
-		File currentLogFile = new File(dir, today+".json");
-		if(currentLogFile.exists()) {
-			Gson gson = new GsonBuilder().setPrettyPrinting().create();
-			Type collectionType = new TypeToken<Collection<LogEntry>>() {}.getType();
-			try {
-				String json = FileUtils.readFileToString(currentLogFile, "UTF-8");
-				List<LogEntry> logs = gson.fromJson(json,collectionType);
-				Set<String> currentExerciseSet = new HashSet<String>();
-				for(LogEntry entry: logs) {
-					currentExerciseSet.add(entry.exercise);
-				}
-				this.doneExercices = currentExerciseSet;
-			} catch(IOException e) {
-				Log.e("IO", "Couldn't read current log file in list view", e);
-			}
-		}
+		new LoadListData(this).execute(new LoadListData.Input());
+		
 	}	
 
 	@Override
@@ -130,13 +118,6 @@ public class ExerciseListActivity extends ListActivity {
 	protected void onStop() {
 		super.onStop();
 		saveExercises();
-	}
-
-	@Override
-	protected void onStart() {
-		super.onStart();
-		loadExercises();
-		displayExercises();
 	}
 	
 	@Override
@@ -367,6 +348,12 @@ public class ExerciseListActivity extends ListActivity {
 			ab.setSubtitle(filter);
 		}
 		this.exerciseAdapter.notifyDataSetChanged();
+		
+		if(displayExercises.size() == 0 && loaded) {
+			findViewById(R.id.noExercisesView).setVisibility(View.VISIBLE);
+		} else {
+			findViewById(R.id.noExercisesView).setVisibility(View.GONE);
+		}
 
 	}
 
@@ -421,4 +408,106 @@ public class ExerciseListActivity extends ListActivity {
 		}
 	}
 
+	private static class LoadListData extends AsyncTask<LoadListData.Input, Void, LoadListData.Output> {
+		public static class Input {
+			
+		}
+		
+		public static class Output {
+			public Set<String> doneExercices;
+			public ArrayList<Exercise> allExercises;
+			public boolean dirty;
+		}
+		
+		private ExerciseListActivity act;
+
+		public LoadListData(ExerciseListActivity act) {
+			this.act = act;
+		}
+
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+		}
+
+		@Override
+		protected Output doInBackground(Input... params) {
+			Input input = params[0];
+			Output output = new Output();
+			
+			loadCurrentWorkout(output);
+			loadExerciseList(output);
+			
+			return output;
+		}
+
+		private void loadExerciseList(Output output) {
+			File file = Util.getExerciseFile(act.getApplicationContext());
+			Gson gson = new GsonBuilder().setPrettyPrinting().create();
+			Type collectionType = new TypeToken<Collection<Exercise>>() {}.getType();
+			List<Exercise> exercisesRead = new ArrayList<Exercise>();
+			String json;
+			try {
+				json = FileUtils.readFileToString(file, "UTF-8");
+				Log.d("IO", "Start Reading from " + file.getAbsolutePath() + "\n" + json);
+		
+				exercisesRead = gson.fromJson(json, collectionType);
+			} catch (IOException e) {
+				InputStream raw = act.getResources().openRawResource(R.raw.exerciselist_default);
+				exercisesRead = gson.fromJson(new InputStreamReader(raw), collectionType);
+				output.dirty = true; //Save this on exit
+			}
+			
+			Collections.sort(exercisesRead);
+			output.allExercises = new ArrayList<Exercise>(exercisesRead);
+		}
+		
+		private void loadCurrentWorkout(Output output) {
+			File dir = Util.getLogStorageDir(act.getApplicationContext());
+			String today = new LocalDate().toString("yyyy-MM-dd");
+			File currentLogFile = new File(dir, today+".json");
+			if(currentLogFile.exists()) {
+				Gson gson = new GsonBuilder().setPrettyPrinting().create();
+				Type collectionType = new TypeToken<Collection<LogEntry>>() {}.getType();
+				try {
+					String json = FileUtils.readFileToString(currentLogFile, "UTF-8");
+					List<LogEntry> logs = gson.fromJson(json,collectionType);
+					Set<String> currentExerciseSet = new HashSet<String>();
+					for(LogEntry entry: logs) {
+						currentExerciseSet.add(entry.exercise);
+					}
+					output.doneExercices = currentExerciseSet;
+				} catch(IOException e) {
+					Log.e("IO", "Couldn't read current log file in list view", e);
+				}
+			}
+		}
+
+		@Override
+		protected void onPostExecute(Output result) {
+			super.onPostExecute(result);
+			act.completeBackgroundLoad(result);
+		}
+	
+	}
+
+	public void completeBackgroundLoad(LoadListData.Output result) {
+		loaded = true;
+		
+		if(result.doneExercices!= null) {
+			doneExercices = result.doneExercices;
+		}
+		
+		if(result.dirty) {
+			dirty = true;
+		}
+		
+		if(result.allExercises != null) {
+			allExercises.clear();
+			allExercises.addAll(result.allExercises);
+		}
+		displayExercises();
+		findViewById(R.id.linlaHeaderProgress).setVisibility(View.GONE);
+		getListView().setVisibility(View.VISIBLE);
+	}
 }
