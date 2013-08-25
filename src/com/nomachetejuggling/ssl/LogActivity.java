@@ -41,8 +41,6 @@ import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.LogEntry;
 import com.nomachetejuggling.ssl.model.LogSet;
 
-//TODO: clean this code up, lots of duplication
-
 public class LogActivity extends Activity {
 
 	private List<LogEntry> currentLogs = null;

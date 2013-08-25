@@ -17,8 +17,8 @@ public class Exercise implements Serializable, Comparable<Exercise> {
 	}
 
 	@Override
-	public int compareTo(Exercise arg0) {
-		return name.trim().toUpperCase().compareTo(arg0.name.trim().toUpperCase());
+	public int compareTo(Exercise other) {
+		return name.trim().compareToIgnoreCase(other.name.trim());
 	}
 
 	public void copyFrom(Exercise editedExercise) {
