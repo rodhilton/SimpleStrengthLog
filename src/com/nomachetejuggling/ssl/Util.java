@@ -21,7 +21,9 @@ import com.google.gson.reflect.TypeToken;
 import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.MuscleGroups;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.res.Resources;
 import android.content.res.Resources.NotFoundException;
 import android.os.Environment;
@@ -106,6 +108,17 @@ public class Util {
 	    out.append(separator).append(s[x]);
 	
 	  return out.toString();
+	}
+
+	static Activity getActivityFromContext(Context context) {
+		while (context instanceof ContextWrapper && !(context instanceof Activity)) {
+	        context = ((ContextWrapper) context).getBaseContext();
+	    }
+	    if (!(context instanceof Activity)) {
+	        throw new IllegalStateException("The Context is not an Activity.");
+	    }
+	
+	    return (Activity) context;
 	}
 
 }

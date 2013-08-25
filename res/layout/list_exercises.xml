@@ -1,33 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:padding="10dip"
-    android:orientation="vertical">
+    android:layout_height="match_parent"
+    android:padding="10dip" >
 
-    <TextView
-        android:id="@+id/line1"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:hint="Exercise Name"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
-
-    <TextView
-        android:id="@+id/muscleList"
+    <LinearLayout
+        android:id="@+id/linearLayout1"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="@color/dimmed_text"
-        android:visibility="gone" />
+        android:layout_height="match_parent"
+        android:orientation="vertical" 
+       >
+
+        <TextView
+            android:id="@+id/line1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Exercise Name"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <TextView
+            android:id="@+id/muscleList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:hint="Muscle List"
+            android:maxLines="1"
+            android:text="Muscle Listqweqwe"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textColor="@color/dimmed_text"
+            android:visibility="visible" 
+             android:layout_marginRight="5dp"/>
+
+    </LinearLayout>
 
     <CheckBox
-        android:id="@+id/checkBox1"
+        android:id="@+id/favoriteCheckbox"
+        style="?android:attr/starStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text=""
-        style="?android:attr/starStyle" 
+        android:layout_alignBottom="@id/linearLayout1"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignTop="@id/linearLayout1"
         android:focusable="false"
-        android:visibility="gone"/>
+        android:visibility="visible" />
 
-</LinearLayout>
+</RelativeLayout>
