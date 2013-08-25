@@ -50,4 +50,16 @@ public class MuscleGroups implements Serializable {
 		Collections.sort(muscleList);
 		return muscleList;
 	}
+
+	public boolean contains(CharSequence filter, Exercise exercise) {
+		List<String> muscles = muscleGroupToMuscles.get(filter);
+		if(muscles == null) return false;
+		
+		for(String exerciseMuscle: exercise.muscles) {
+			if(muscles.contains(exerciseMuscle)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

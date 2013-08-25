@@ -201,6 +201,8 @@ public class LogActivity extends Activity {
 		if(this.restTimer != null) {
 			restTimer.cancel();
 			savedInstanceState.putInt("RestTimeRemaining", this.restSecsLeft);
+		} else {
+			savedInstanceState.putInt("RestTimeRemaining", -1);
 		}
 		
 		Button undoButton = (Button) findViewById(R.id.undoButton);
@@ -437,6 +439,8 @@ public class LogActivity extends Activity {
 	}
 
 	private void restFor(int restTime) {
+		if(restTime <= 0) return;
+		
 		Button saveButton = (Button) findViewById(R.id.saveButton);
 		Button saveAndRestButton = (Button) findViewById(R.id.saveAndRestButton);
 		Button undoButton = (Button) findViewById(R.id.undoButton);

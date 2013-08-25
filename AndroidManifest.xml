@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <uses-sdk
-        android:minSdkVersion="11"
+        android:minSdkVersion="14"
         android:targetSdkVersion="17" />
 
     <application
@@ -51,6 +51,10 @@
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.nomachetejuggling.ssl.ExerciseListActivity" />
+        </activity>
+        <activity
+            android:name="com.nomachetejuggling.ssl.DropDownActivity"
+            android:label="@string/title_activity_drop_down" >
         </activity>
     </application>
 
