@@ -45,4 +45,14 @@
         android:focusable="false"
         android:visibility="visible" />
 
+    <TextView
+        android:id="@+id/doneTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@+id/favoriteCheckbox"
+        android:text="✔"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:visibility="gone" />
+
 </RelativeLayout>
