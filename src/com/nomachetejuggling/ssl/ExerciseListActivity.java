@@ -38,6 +38,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -50,18 +51,18 @@ import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.LogEntry;
 import com.nomachetejuggling.ssl.model.MuscleGroups;
 
-// -- Release 1.2
-//TODO: Filter should be a navigation dropdown, not a button
+// -- Release 1.3
+//TODO: minor view issues in list... long names and long muscle lists overlap the star... checkmark too
+//TODO: view issue on action bar.  lower case letters with a descender (g, p) get cut off
 
 // -- Future Release
-//FUTURE: minor view issues in list... long names and long muscle lists overlap the star... checkmark too
 //FUTURE: Edit name of exercise (tough because it has to spider all logs and rename there.. or at least warn people)
 //FUTURE: "workout summary" feature with all of current day's stuff.  datepicker for other dates.
 //FUTURE: (maybe) full historical record for an exercise to see improvement.  should this be part of larger suite?
 //FUTURE: tablet uses fragments.  exercise list on left, click and it opens log on right (like reddit is fun app)
 //FIXME: low priority, but if you started working out at 11:58pm and did 4 sets, they'd be logged to one file.. then if you do a 5th at 12:01 am, all 5 would be logged there, duplicating the 4.
 
-public class ExerciseListActivity extends ListActivity {
+public class ExerciseListActivity extends ListActivity implements ActionBar.OnNavigationListener {
 	private ExerciseAdapter exerciseAdapter;
 	private ArrayList<Exercise> allExercises;
 	private ArrayList<Exercise> displayExercises;
@@ -74,12 +75,18 @@ public class ExerciseListActivity extends ListActivity {
 
 	private static final int ADD_EXERCISE_REQUEST = 0;
 	private static final int EDIT_EXERCISE_REQUEST = 1;
+	
+	private ArrayList<String> itemList;
 
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);		
 		setContentView(R.layout.activity_exercise_list);
+		
+		final ActionBar actionBar = getActionBar();
+		actionBar.setDisplayShowTitleEnabled(false);
+		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
 		
 		getListView().setVisibility(View.INVISIBLE);
 		findViewById(R.id.linlaHeaderProgress).setVisibility(View.VISIBLE);
@@ -101,10 +108,29 @@ public class ExerciseListActivity extends ListActivity {
 			filter = "All";
 		}
 		
+		itemList = new ArrayList<String>();
+		itemList.add("All");
+		itemList.add("Favorites");
+		for(String muscleGroup: muscleGroups.getMuscleGroups()) {
+			itemList.add(muscleGroup);
+		}
+		
+		AdapterBaseMaps aAdpt = new AdapterBaseMaps(this,itemList);
+		
+		actionBar.setListNavigationCallbacks(aAdpt, this);
+		
 		new LoadListData(this).execute(new LoadListData.Input());
 		
 	}	
 
+	@Override
+	public boolean onNavigationItemSelected(int position, long id) {
+		this.filter = itemList.get(position);
+		displayExercises();
+		return true;
+	}
+
+	
 	@Override
 	public void onSaveInstanceState(Bundle savedInstanceState) {
 		super.onSaveInstanceState(savedInstanceState);
@@ -141,16 +167,9 @@ public class ExerciseListActivity extends ListActivity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.exercise_list, menu);
-
-		MenuItem item = menu.findItem(R.id.pick_action_provider);
-		ExerciseListFilterActionProvider provider = (ExerciseListFilterActionProvider) item.getActionProvider();
-		provider.setMuscleGroups(this.muscleGroups);
-
 		return true;
 	}
 	
-	
-
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
@@ -484,5 +503,56 @@ public class ExerciseListActivity extends ListActivity {
 		displayExercises();
 		findViewById(R.id.linlaHeaderProgress).setVisibility(View.GONE);
 		getListView().setVisibility(View.VISIBLE);
+	}
+	
+	private static class AdapterBaseMaps extends BaseAdapter {
+
+		Context context;
+		ArrayList<String> data;
+		LayoutInflater inflater;
+
+		public AdapterBaseMaps(Context context, ArrayList<String> data) {
+			this.data = data;
+			inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			this.context = context;	
+		}
+
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent) {
+
+			View actionBarView = inflater.inflate(R.layout.ab_main_view, null);
+			TextView title = (TextView) actionBarView.findViewById(R.id.ab_basemaps_title);
+			TextView subtitle = (TextView) actionBarView.findViewById(R.id.ab_basemaps_subtitle);
+			title.setText(context.getResources().getString(R.string.title_exercise_list));
+			subtitle.setText(data.get(position));
+			return actionBarView;
+
+		}
+
+		@Override
+		public View getDropDownView(int position, View convertView, ViewGroup parent) {
+			View actionBarDropDownView = inflater.inflate(R.layout.ab_dropdown_view, null);
+			TextView dropDownTitle = (TextView) actionBarDropDownView.findViewById(R.id.ab_basemaps_dropdown_title);
+
+			dropDownTitle.setText(data.get(position));
+
+			return actionBarDropDownView;
+		}
+
+		@Override
+		public int getCount() {
+			return data.size();
+		}
+
+		@Override
+		public Object getItem(int position) {
+			return data.get(position);
+		}
+
+		@Override
+		public long getItemId(int position) {
+			return 0;
+		}
+
 	}
 }
