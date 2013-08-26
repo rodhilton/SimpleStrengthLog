@@ -22,8 +22,10 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.Html;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -51,10 +53,6 @@ import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.LogEntry;
 import com.nomachetejuggling.ssl.model.MuscleGroups;
 
-// -- Release 1.3
-//TODO: minor view issues in list... long names and long muscle lists overlap the star... checkmark too
-//TODO: view issue on action bar.  lower case letters with a descender (g, p) get cut off
-
 // -- Future Release
 //FUTURE: Edit name of exercise (tough because it has to spider all logs and rename there.. or at least warn people)
 //FUTURE: "workout summary" feature with all of current day's stuff.  datepicker for other dates.
@@ -77,17 +75,15 @@ public class ExerciseListActivity extends ListActivity implements ActionBar.OnNa
 	private static final int EDIT_EXERCISE_REQUEST = 1;
 	
 	private ArrayList<String> itemList;
+	private ActionBarNavigationAdapter aAdpt;
 
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);		
+		Log.i("ELA", "Create");
 		setContentView(R.layout.activity_exercise_list);
-		
-		final ActionBar actionBar = getActionBar();
-		actionBar.setDisplayShowTitleEnabled(false);
-		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
-		
+				
 		getListView().setVisibility(View.INVISIBLE);
 		findViewById(R.id.linlaHeaderProgress).setVisibility(View.VISIBLE);
 		
@@ -98,13 +94,18 @@ public class ExerciseListActivity extends ListActivity implements ActionBar.OnNa
 		exerciseAdapter = new ExerciseAdapter(this, R.layout.list_exercises, R.id.line1, displayExercises);
 		setListAdapter(exerciseAdapter);
 		
-		registerForContextMenu(getListView());
-
+		registerForContextMenu(getListView());		
+		
 		if(savedInstanceState != null) {
 			muscleGroups = (MuscleGroups) savedInstanceState.getSerializable("muscleGroups");
-			filter = savedInstanceState.getString("filter");
 		} else {
 			muscleGroups = Util.loadMuscleGroups(getApplicationContext());
+		}
+		
+		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+		if(settings.contains("filter")){
+			filter = settings.getString("filter", "All");
+		} else {
 			filter = "All";
 		}
 		
@@ -115,13 +116,21 @@ public class ExerciseListActivity extends ListActivity implements ActionBar.OnNa
 			itemList.add(muscleGroup);
 		}
 		
-		AdapterBaseMaps aAdpt = new AdapterBaseMaps(this,itemList);
-		
+		aAdpt = new ActionBarNavigationAdapter(this,itemList);				
+	}	
+	
+	@Override
+	public void onStart() {
+		super.onStart();
+		Log.i("ELA", "Start");
+		final ActionBar actionBar = getActionBar();
+		actionBar.setDisplayShowTitleEnabled(false);
+		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);		
 		actionBar.setListNavigationCallbacks(aAdpt, this);
+		actionBar.setSelectedNavigationItem(itemList.indexOf(filter));
 		
 		new LoadListData(this).execute(new LoadListData.Input());
-		
-	}	
+	}
 
 	@Override
 	public boolean onNavigationItemSelected(int position, long id) {
@@ -130,13 +139,40 @@ public class ExerciseListActivity extends ListActivity implements ActionBar.OnNa
 		return true;
 	}
 
+	@Override
+	public void onRestoreInstanceState(Bundle savedInstanceState) {
+	  super.onRestoreInstanceState(savedInstanceState);
+	  Log.i("ELA", "Restore");
+		muscleGroups = (MuscleGroups) savedInstanceState.getSerializable("muscleGroups");
+		filter = savedInstanceState.getString("filter");
+	}
+	
+	@Override
+	protected void onPause() 
+	{
+	  super.onPause();
+	  Log.i("ELA", "Pause");
+	  
+	  // Store values between instances here
+	  SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+	  
+	  SharedPreferences.Editor editor = settings.edit();  // Put the values from the UI
+	  
+	  editor.putString("filter", filter); // value to store    
+	  editor.commit();
+	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		Log.i("ELA", "Resume");
+	}
 	
 	@Override
 	public void onSaveInstanceState(Bundle savedInstanceState) {
 		super.onSaveInstanceState(savedInstanceState);
 		
 		savedInstanceState.putSerializable("muscleGroups", this.muscleGroups);
-		savedInstanceState.putString("filter", filter);
 	}
 
 	@Override
@@ -322,31 +358,37 @@ public class ExerciseListActivity extends ListActivity implements ActionBar.OnNa
 	}
 
 	private void displayExercises() {
-		ActionBar ab = getActionBar();
+		String title;
 		
 		displayExercises.clear();
 		if (this.filter == null || this.filter.equals("All")) {
 			displayExercises.addAll(allExercises);
-			ab.setSubtitle(null);
+			title = "Simple Strength Log";
 		} else if(filter.equals("Favorites")) {
 			for (Exercise exercise : allExercises) {
 				if (exercise.favorite) displayExercises.add(exercise);
 			}
-			ab.setSubtitle("Favorites");
+			title = filter;
 		} else {
 			for (Exercise exercise : allExercises) {
 				if (muscleGroups.contains(filter, exercise)) {
 					displayExercises.add(exercise);
 				}
 			}
-			ab.setSubtitle(filter);
+			title = filter;
 		}
 		this.exerciseAdapter.notifyDataSetChanged();
+		
+		TextView spinnerBox = (TextView) findViewById(R.id.ab_basemaps_title);
+		//For reasons I cannot understand yet, occasionally this is null.  To prevent the app from crashing, I null check it here.
+		if(spinnerBox!=null) {
+			spinnerBox.setText(title);
+		}
 		
 		if(displayExercises.size() == 0 && loaded) {
 			findViewById(R.id.noExercisesView).setVisibility(View.VISIBLE);
 		} else {
-			findViewById(R.id.noExercisesView).setVisibility(View.GONE);
+			findViewById(R.id.noExercisesView).setVisibility(View.INVISIBLE); //Not GONE, we want it to take up space so that checking something off doesn't make the name wrap
 		}
 
 	}
@@ -368,13 +410,12 @@ public class ExerciseListActivity extends ListActivity implements ActionBar.OnNa
 			final Exercise item = getItem(position);
 			ExerciseListActivity act = (ExerciseListActivity)mContext;
 			TextView text = (TextView) row.findViewById(R.id.line1);
+			text.setText(item.name);
+			
 			if(act.doneExercices.contains(item.name)) {
-				int checkTextColor=mContext.getResources().getColor(R.color.checkMark);
-				String hexColor = String.format("#%06X", (0xFFFFFF & checkTextColor));
-				
-				text.setText(Html.fromHtml(StringEscapeUtils.escapeHtml3(item.name)+" <font color='"+hexColor+"'>&#x2713;</font>"));
+				row.findViewById(R.id.doneCheckMarkView).setVisibility(View.VISIBLE);
 			} else {
-				text.setText(item.name);
+				row.findViewById(R.id.doneCheckMarkView).setVisibility(View.GONE);
 			}
 			
 			OnClickListener toggleFavoriteListener = new OnClickListener(){
@@ -505,13 +546,13 @@ public class ExerciseListActivity extends ListActivity implements ActionBar.OnNa
 		getListView().setVisibility(View.VISIBLE);
 	}
 	
-	private static class AdapterBaseMaps extends BaseAdapter {
+	private static class ActionBarNavigationAdapter extends BaseAdapter {
 
 		Context context;
 		ArrayList<String> data;
 		LayoutInflater inflater;
 
-		public AdapterBaseMaps(Context context, ArrayList<String> data) {
+		public ActionBarNavigationAdapter(Context context, ArrayList<String> data) {
 			this.data = data;
 			inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 			this.context = context;	
@@ -522,9 +563,12 @@ public class ExerciseListActivity extends ListActivity implements ActionBar.OnNa
 
 			View actionBarView = inflater.inflate(R.layout.ab_main_view, null);
 			TextView title = (TextView) actionBarView.findViewById(R.id.ab_basemaps_title);
-			TextView subtitle = (TextView) actionBarView.findViewById(R.id.ab_basemaps_subtitle);
-			title.setText(context.getResources().getString(R.string.title_exercise_list));
-			subtitle.setText(data.get(position));
+			
+			if(position == 0) {
+				title.setText(context.getResources().getString(R.string.title_exercise_list));
+			} else {
+				title.setText(data.get(position));
+			}
 			return actionBarView;
 
 		}

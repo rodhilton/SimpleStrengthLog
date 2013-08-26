@@ -12,16 +12,4 @@ android:layout_height="wrap_content" >
     android:textAppearance="?android:attr/textAppearanceMedium"
     android:textColor="@color/actionbar_color" />
 
-<TextView
-    android:id="@+id/ab_basemaps_subtitle"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_below="@+id/ab_basemaps_title"
-    android:ellipsize="end"
-    android:maxLines="1"
-    android:paddingTop="0dp"
-    android:text=""
-    android:textAppearance="?android:attr/textAppearanceSmall"
-    android:textColor="@color/actionbar_color" />
-
 </RelativeLayout>
