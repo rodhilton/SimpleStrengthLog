@@ -13,7 +13,7 @@
     </style>
 
     <!-- Application theme. -->
-    <style name="AppTheme" parent="AppBaseTheme">
+    <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar">
 
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
         <item name="android:actionBarStyle">@style/MyActionBar</item>
@@ -25,11 +25,10 @@
         <item name="android:titleTextStyle">@style/MyTextAppearance</item>
         <item name="android:subtitleTextStyle">@style/MySubtitleAppearance</item>
     </style>
-
+            
     <style name="MyTextAppearance" parent="android:TextAppearance.Holo.Widget.ActionBar.Title">
         <item name="android:textColor">@color/actionbar_color</item>
-    </style>
-    
+    </style>    
     
     <style name="MySubtitleAppearance" parent="android:TextAppearance.Holo.Widget.ActionBar.Subtitle">
         <item name="android:textColor">@color/actionbar_color</item>

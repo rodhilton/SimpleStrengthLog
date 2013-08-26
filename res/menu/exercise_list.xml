@@ -11,11 +11,5 @@
         android:icon="@android:drawable/ic_menu_add"
         android:showAsAction="ifRoom"
         android:title="@string/add_exercise"/>
-    
-    <item android:id="@+id/pick_action_provider"
-		android:showAsAction="always"
-		android:icon="@drawable/ic_menu_moreoverflow"
-		android:title="@string/menu_filter"
-		android:actionProviderClass="com.nomachetejuggling.ssl.ExerciseListFilterActionProvider"/>
 
 </menu>
