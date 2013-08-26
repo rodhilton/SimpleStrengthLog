@@ -51,15 +51,14 @@ import com.nomachetejuggling.ssl.model.LogEntry;
 import com.nomachetejuggling.ssl.model.MuscleGroups;
 
 // -- Release 1.2
-//TODO: Log should use same pattern, spinner in view
+//TODO: Filter should be a navigation dropdown, not a button
 
 // -- Future Release
-//FUTURE: Metric/Imperial setting (this should change increment from 5 to 1) (release in more locations)
+//FUTURE: minor view issues in list... long names and long muscle lists overlap the star... checkmark too
 //FUTURE: Edit name of exercise (tough because it has to spider all logs and rename there.. or at least warn people)
 //FUTURE: "workout summary" feature with all of current day's stuff.  datepicker for other dates.
 //FUTURE: (maybe) full historical record for an exercise to see improvement.  should this be part of larger suite?
-//FUTURE: Filter should be a navigation dropdown, not a button
-//FUTURE: minor view issues in list... long names and long muscle lists overlap the star... checkmark too
+//FUTURE: tablet uses fragments.  exercise list on left, click and it opens log on right (like reddit is fun app)
 //FIXME: low priority, but if you started working out at 11:58pm and did 4 sets, they'd be logged to one file.. then if you do a 5th at 12:01 am, all 5 would be logged there, duplicating the 4.
 
 public class ExerciseListActivity extends ListActivity {
@@ -176,7 +175,6 @@ public class ExerciseListActivity extends ListActivity {
 	
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
-	    // Here's how you can get the correct item in onContextItemSelected()
 	    AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
 	    Exercise selectedExercise = ((ExerciseAdapter) getListAdapter()).getItem(info.position);
 	    
@@ -304,29 +302,6 @@ public class ExerciseListActivity extends ListActivity {
 		dirty = false;
 	}
 
-	private void loadExercises() {
-		File file = Util.getExerciseFile(this.getApplicationContext());
-		Gson gson = new GsonBuilder().setPrettyPrinting().create();
-		Type collectionType = new TypeToken<Collection<Exercise>>() {}.getType();
-		List<Exercise> exercisesRead = new ArrayList<Exercise>();
-		String json;
-		try {
-			json = FileUtils.readFileToString(file, "UTF-8");
-			Log.d("IO", "Start Reading from " + file.getAbsolutePath() + "\n" + json);
-	
-			exercisesRead = gson.fromJson(json, collectionType);
-		} catch (IOException e) {
-			InputStream raw = getResources().openRawResource(R.raw.exerciselist_default);
-			exercisesRead = gson.fromJson(new InputStreamReader(raw), collectionType);
-			this.dirty = true; //Save this on exit
-		}
-		
-		Collections.sort(exercisesRead);
-		allExercises.clear();
-		allExercises.addAll(exercisesRead);
-		
-	}
-
 	private void displayExercises() {
 		ActionBar ab = getActionBar();
 		
@@ -432,7 +407,7 @@ public class ExerciseListActivity extends ListActivity {
 
 		@Override
 		protected Output doInBackground(Input... params) {
-			Input input = params[0];
+			//Input input = params[0];
 			Output output = new Output();
 			
 			loadCurrentWorkout(output);

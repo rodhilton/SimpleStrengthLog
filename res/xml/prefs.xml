@@ -7,6 +7,12 @@
         android:key="screenOn"
         android:summary="Keep screen on during exercise"
         android:title="Keep Screen On" />
+    
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="metricUnits"
+        android:summary="Use kg instead of lbs"
+        android:title="Metric Units" />
 
     <PreferenceCategory android:title="Rest Timer Alarm" >
         <CheckBoxPreference
