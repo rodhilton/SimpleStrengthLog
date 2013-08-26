@@ -2,13 +2,19 @@ package com.nomachetejuggling.ssl;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalTime;
 import org.joda.time.Period;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
 import android.app.ActionBar;
@@ -16,6 +22,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.MediaPlayer;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -37,9 +44,9 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.LogEntry;
-import com.nomachetejuggling.ssl.model.LogSet;
 
 public class LogActivity extends Activity {
 
@@ -48,8 +55,12 @@ public class LogActivity extends Activity {
 	private Exercise currentExercise;
 	private CountDownTimer restTimer;
 	private int restSecsLeft = -1;
-	private static final int WEIGHT_FACTOR = 5;
+	private int weightScale = 5;
+	private boolean metric = false;
 	private boolean spinnersAlreadySet = false;
+	
+	private static final int NUM_WEIGHT_VALUES = 200;
+	private static final int NUM_REP_VALUES = 50;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -67,31 +78,32 @@ public class LogActivity extends Activity {
         	Log.i("SETTINGS", "Not keeping screen on");
         }
         
+        this.metric = settings.getBoolean("metricUnits", false);
+        this.weightScale = metric ? 1 : 5;
+        
 		currentLogs = new ArrayList<LogEntry>();
 		previousLogs = new ArrayList<LogEntry>();
 		
 		currentExercise = (Exercise) getIntent().getExtras().getSerializable("exercise");
 
-		int numValues = 100;
-
 		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
 		weightPicker.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
 
-		String[] displayedValues = new String[numValues];
+		String[] displayedValues = new String[NUM_WEIGHT_VALUES];
+		String weightUnits = metric ? "kg" : "lbs";
 		// Populate the array
-		for (int i = 0; i < numValues; i++) displayedValues[i] = String.valueOf(WEIGHT_FACTOR * (i + 1)) + " lbs";
+		for (int i = 0; i < NUM_WEIGHT_VALUES; i++) displayedValues[i] = String.valueOf(weightScale * (i + 1)) + " " + weightUnits;
 
 		weightPicker.setMinValue(0);
 		weightPicker.setMaxValue(displayedValues.length - 1);
 		weightPicker.setDisplayedValues(displayedValues);
 		weightPicker.setWrapSelectorWheel(false);
 
-		int maxReps = 20;
 		NumberPicker repsPicker = (NumberPicker) findViewById(R.id.repsPicker);
 		repsPicker.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
-		String[] displayedReps = new String[maxReps];
+		String[] displayedReps = new String[NUM_REP_VALUES];
 		// Populate the array
-		for (int i = 0; i < maxReps; i++)
+		for (int i = 0; i < NUM_REP_VALUES; i++)
 			displayedReps[i] = (i + 1) + " reps";
 
 		repsPicker.setMinValue(0);
@@ -120,7 +132,15 @@ public class LogActivity extends Activity {
 		
 		File dir = Util.getLogStorageDir(getApplicationContext());
 		
-		new LoadLogsTask(this).execute(currentExercise, dir);
+		findViewById(R.id.currentLogsLayout).setVisibility(View.INVISIBLE);
+		findViewById(R.id.previousLogsLayout).setVisibility(View.INVISIBLE);
+		findViewById(R.id.logLoadProgress).setVisibility(View.VISIBLE);
+		
+		LoadLogData.Input input = new LoadLogData.Input();
+		input.currentExercise = currentExercise;
+		input.dir = dir;
+		
+		new LoadLogData(this).execute(input);
 	}
 
 	@Override
@@ -213,17 +233,20 @@ public class LogActivity extends Activity {
 		this.persistCurrentLogs();
 	}
 
-	public void loadCurrentLogs(LogSet logSet) {
-		currentLogs.clear();
-		currentLogs.addAll(logSet.currentLogs);
+	public void loadCurrentLogs(LoadLogData.Output output) {
+		if(output.currentLogs != null) {
+			currentLogs.clear();
+			currentLogs.addAll(output.currentLogs);
+		}
 
-		previousLogs.clear();
-		previousLogs.addAll(logSet.previousLogs);
+		if(output.previousLogs != null) {
+			previousLogs.clear();
+			previousLogs.addAll(output.previousLogs);
+		}
 
-		if(logSet.previousDate != null) {
+		if(output.previousDate != null) {
 			TextView textView = (TextView) findViewById(R.id.previousLogLabel);
-			String relative = Util.getRelativeDate(new LocalDate(),
-					logSet.previousDate);
+			String relative = Util.getRelativeDate(new LocalDate(), output.previousDate);
 			textView.setText(relative + ":");
 		}
 
@@ -248,7 +271,7 @@ public class LogActivity extends Activity {
 			}
 			
 			if(lastEntry != null) {
-				int weightPosition = (lastEntry.weight / WEIGHT_FACTOR) - 1;
+				int weightPosition = (lastEntry.weight / weightScale) - 1;
 				int repsPosition = (lastEntry.reps) - 1;
 		
 				NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
@@ -260,6 +283,9 @@ public class LogActivity extends Activity {
 			}
 		}
 		this.showCurrentLogs();
+		findViewById(R.id.currentLogsLayout).setVisibility(View.VISIBLE);
+		findViewById(R.id.previousLogsLayout).setVisibility(View.VISIBLE);
+		findViewById(R.id.logLoadProgress).setVisibility(View.GONE);
 	}
 
 	private void persistCurrentLogs() {
@@ -340,7 +366,7 @@ public class LogActivity extends Activity {
 
 		LogEntry log = new LogEntry();
 		log.exercise = currentExercise.name;
-		log.weight = ((weightPicker.getValue() + 1) * WEIGHT_FACTOR);
+		log.weight = ((weightPicker.getValue() + 1) * weightScale);
 		log.reps = (repsPicker.getValue() + 1);
 		log.time = new LocalTime().toString(ISODateTimeFormat.time());
 		return log;
@@ -419,5 +445,85 @@ public class LogActivity extends Activity {
 		}
 	}
 
+	private static class LoadLogData extends AsyncTask<LoadLogData.Input, Void, LoadLogData.Output> {
+		public static class Input {
+			Exercise currentExercise;
+			File dir;
+		}
+		
+		public static class Output {
+			List<LogEntry> currentLogs = new ArrayList<LogEntry>();
+			List<LogEntry> previousLogs = new ArrayList<LogEntry>();
+			LocalDate previousDate = null;
+		}
+		private LogActivity act;
+
+		public LoadLogData(LogActivity act) {
+			this.act = act;
+		}
+
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+		}
+
+		@Override
+		protected Output doInBackground(Input... params) {
+			Input input = params[0];
+			
+			Output output = new Output();
+			
+			Exercise currentExercise = input.currentExercise;
+			File dir = input.dir;
+			
+			String today = new LocalDate().toString("yyyy-MM-dd");
+
+			try {
+				File[] files = dir.listFiles();
+
+				Arrays.sort(files, new Comparator<File>() {
+					public int compare(File f1, File f2) {
+						return f2.getName().compareTo(f1.getName());
+					}
+				});
+				
+				Gson gson = new GsonBuilder().setPrettyPrinting().create();
+				Type collectionType = new TypeToken<Collection<LogEntry>>() {}.getType();
+				DateTimeFormatter pattern = DateTimeFormat.forPattern("yyyy-MM-dd");
+				
+				output.currentLogs = new ArrayList<LogEntry>();
+				output.previousLogs = new ArrayList<LogEntry>();
+				
+				for (int i = 0; i < 50 && i < files.length && output.previousLogs.size() == 0; i++) {
+					File file = files[i];
+					String json = FileUtils.readFileToString(file, "UTF-8");
+					List<LogEntry> logs = gson.fromJson(json,collectionType);
+					if (file.getName().equals(today + ".json")) {
+						output.currentLogs = logs;
+					} else {
+						for (LogEntry entry : logs) {
+							if (entry.exercise.equals(currentExercise.name)) {
+								output.previousLogs = logs;
+								output.previousDate = LocalDate.parse(file.getName().substring(0,10), pattern);
+							}
+						}
+					}
+				}
+
+				return output;
+			} catch (IOException e) {
+				Log.e("IO", "Problem", e);
+				return new Output();
+			}
+
+		}
+
+		@Override
+		protected void onPostExecute(Output output) {
+			super.onPostExecute(output);
+			act.loadCurrentLogs(output);
+		}
+
+	}
 	
 }
