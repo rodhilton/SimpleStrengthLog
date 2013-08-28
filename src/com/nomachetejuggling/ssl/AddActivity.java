@@ -43,7 +43,7 @@ public class AddActivity extends Activity {
 			} else {
 				setCurrentMuscles(new String[]{});
 			}
-		} else if(getIntent().getExtras().containsKey("exercise")) { //Edit
+		} else if(getIntent() != null && getIntent().getExtras() != null && getIntent().getExtras().containsKey("exercise")) { //Edit
 			Exercise exercise = (Exercise) getIntent().getExtras().getSerializable("exercise");
 			
 			EditText nameText = (EditText) findViewById(R.id.nameText);
