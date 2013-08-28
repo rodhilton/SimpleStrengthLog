@@ -224,7 +224,7 @@ public class ExerciseListActivity extends ListActivity implements ActionBar.OnNa
 	
 	@Override
     protected void onListItemClick(ListView l, View v, int position, long id) { 
-		Exercise exercise = allExercises.get(position);
+		Exercise exercise = displayExercises.get(position);
 		logExercise(exercise);
 	}
 	
