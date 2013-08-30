@@ -124,7 +124,7 @@ public class AddActivity extends Activity {
 		
 		if(valid) {
 			Exercise newExercise = new Exercise();
-			newExercise.name=nameText.getText().toString();
+			newExercise.name=nameText.getText().toString().trim();
 			newExercise.restTime=restTime;
 			newExercise.muscles = this.currentMuscles;
 			newExercise.favorite = favoriteCheckBox.isChecked();

@@ -6,4 +6,6 @@
     <color name="dimmed_text">#888888</color>
     <color name="currentLogEntry">#b3aaaa</color>
     <color name="checkMark">#229922</color>
+        <color name="divider">#79221a</color>
+    <color name="logButtonBackground">#1079221a</color>
 </resources>
