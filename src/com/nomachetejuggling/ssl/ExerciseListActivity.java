@@ -53,6 +53,9 @@ import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.LogEntry;
 import com.nomachetejuggling.ssl.model.MuscleGroups;
 
+// Release 1.5:
+//TODO: warn when canceling an Add after making changes (dirty flag, make sure to persist)
+
 // -- Future Release
 //FUTURE: Edit name of exercise (tough because it has to spider all logs and rename there.. or at least warn people)
 //FUTURE: "workout summary" feature with all of current day's stuff.  datepicker for other dates.
@@ -307,10 +310,25 @@ public class ExerciseListActivity extends ListActivity implements ActionBar.OnNa
 	}
 	
 	private void addExercise(Exercise newExercise) {
+		int copyVal = 1;
+		String originalName = newExercise.name;
+		while(exercisesContain(newExercise)) {
+			copyVal++;
+			newExercise.name = originalName+" ("+copyVal+")"; 
+		}
 		allExercises.add(newExercise);
 		displayExercises();
 		dirty = true;
 		saveExercises();
+	}
+	
+	private boolean exercisesContain(Exercise exercise) {
+		for(Exercise e: allExercises) {
+			if(e.name.equals(exercise.name)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	private void logExercise(Exercise exercise) {

@@ -32,5 +32,9 @@
     <string name="context_menu_edit">Edit</string>
     <string name="addFavoriteCheckBoxLabel">Favorite</string>
     <string name="doneCheckMark">✓</string>
+    <string name="repsPickerView">Reps</string>
+    <string name="weightPickerLabel">Weight</string>
+    <string name="weightPickerLabelImperial">Pounds</string>
+    <string name="weightPickerLabelMetric">Kilograms</string>
 
 </resources>

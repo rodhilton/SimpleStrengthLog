@@ -86,13 +86,17 @@ public class LogActivity extends Activity {
 		
 		currentExercise = (Exercise) getIntent().getExtras().getSerializable("exercise");
 
+		TextView weightPickerLabel = (TextView) findViewById(R.id.weightPickerLabel);
+		weightPickerLabel.setText(getResources().getString( metric ? R.string.weightPickerLabelMetric : R.string.weightPickerLabelImperial));
+		
 		NumberPicker weightPicker = (NumberPicker) findViewById(R.id.weightPicker);
 		weightPicker.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
 
 		String[] displayedValues = new String[NUM_WEIGHT_VALUES];
-		String weightUnits = metric ? "kg" : "lbs";
+		//String weightUnits = metric ? "kg" : "lbs";
 		// Populate the array
-		for (int i = 0; i < NUM_WEIGHT_VALUES; i++) displayedValues[i] = String.valueOf(weightScale * (i + 1)) + " " + weightUnits;
+		for (int i = 0; i < NUM_WEIGHT_VALUES; i++) 
+			displayedValues[i] = String.valueOf(weightScale * (i + 1));
 
 		weightPicker.setMinValue(0);
 		weightPicker.setMaxValue(displayedValues.length - 1);
@@ -104,7 +108,7 @@ public class LogActivity extends Activity {
 		String[] displayedReps = new String[NUM_REP_VALUES];
 		// Populate the array
 		for (int i = 0; i < NUM_REP_VALUES; i++)
-			displayedReps[i] = (i + 1) + " reps";
+			displayedReps[i] = (i + 1)+"";
 
 		repsPicker.setMinValue(0);
 		repsPicker.setMaxValue(displayedReps.length - 1);
@@ -132,15 +136,12 @@ public class LogActivity extends Activity {
 		
 		File dir = Util.getLogStorageDir(getApplicationContext());
 		
+		findViewById(R.id.buttonBar).setVisibility(View.INVISIBLE);
 		findViewById(R.id.currentLogsLayout).setVisibility(View.INVISIBLE);
 		findViewById(R.id.previousLogsLayout).setVisibility(View.INVISIBLE);
 		findViewById(R.id.logLoadProgress).setVisibility(View.VISIBLE);
 		
-		LoadLogData.Input input = new LoadLogData.Input();
-		input.currentExercise = currentExercise;
-		input.dir = dir;
-		
-		new LoadLogData(this).execute(input);
+		new LoadLogData(this, currentExercise, dir).execute();
 	}
 
 	@Override
@@ -283,6 +284,7 @@ public class LogActivity extends Activity {
 			}
 		}
 		this.showCurrentLogs();
+		findViewById(R.id.buttonBar).setVisibility(View.VISIBLE);
 		findViewById(R.id.currentLogsLayout).setVisibility(View.VISIBLE);
 		findViewById(R.id.previousLogsLayout).setVisibility(View.VISIBLE);
 		findViewById(R.id.logLoadProgress).setVisibility(View.GONE);
@@ -445,21 +447,20 @@ public class LogActivity extends Activity {
 		}
 	}
 
-	private static class LoadLogData extends AsyncTask<LoadLogData.Input, Void, LoadLogData.Output> {
-		public static class Input {
-			Exercise currentExercise;
-			File dir;
-		}
-		
+	private static class LoadLogData extends AsyncTask<Void, Void, LoadLogData.Output> {
 		public static class Output {
 			List<LogEntry> currentLogs = new ArrayList<LogEntry>();
 			List<LogEntry> previousLogs = new ArrayList<LogEntry>();
 			LocalDate previousDate = null;
 		}
 		private LogActivity act;
+		private File dir;
+		private Exercise currentExercise;
 
-		public LoadLogData(LogActivity act) {
+		public LoadLogData(LogActivity act, Exercise currentExercise, File dir) {
 			this.act = act;
+			this.dir = dir;
+			this.currentExercise = currentExercise;
 		}
 
 		@Override
@@ -468,14 +469,9 @@ public class LogActivity extends Activity {
 		}
 
 		@Override
-		protected Output doInBackground(Input... params) {
-			Input input = params[0];
-			
+		protected Output doInBackground(Void... params) {		
 			Output output = new Output();
-			
-			Exercise currentExercise = input.currentExercise;
-			File dir = input.dir;
-			
+						
 			String today = new LocalDate().toString("yyyy-MM-dd");
 
 			try {
