@@ -3,11 +3,16 @@ package com.nomachetejuggling.ssl;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.joda.time.LocalDate;
@@ -342,7 +347,103 @@ public class LogActivity extends Activity {
 				scrollView2.fullScroll(ScrollView.FOCUS_DOWN);
 			}
 		});
+		
+		if(!this.metric) { //No idea what kind of plates are outside of the US, not even bothering
+			TextView plateView = (TextView) findViewById(R.id.plateView);
+			plateView.setText(Html.fromHtml(printPlateInfo(currentEntry.weight)));
+		}
 
+	}
+	
+	//TODO: this is a dumb greedy change-making algorithm,  replace with proper optimal dynamic programming solution
+	private String printPlateInfo(int weightIn) {
+		BigDecimal weight = new BigDecimal(weightIn);
+		StringBuilder sb = new StringBuilder();
+		
+		
+		sb.append("Breakdown<br/>");
+		sb.append("<br/>");
+		
+		int currentTextColor=getResources().getColor(R.color.currentLogEntry);
+		String hexColor = String.format("#%06X", (0xFFFFFF & currentTextColor));
+		
+		sb.append("<font color='"+hexColor+"'>");
+		
+		String heaviestDumbbell = getResources().getString(R.string.heaviestDumbbell);
+		String barbellWeight = getResources().getString(R.string.barbellWeight);
+		
+		if(weight.compareTo(new BigDecimal(heaviestDumbbell).multiply(new BigDecimal(2))) <= 0) {
+			sb.append("Dumbbells:<br/>");
+			BigDecimal dumbbellSide = weight.multiply(new BigDecimal("0.5"));
+			sb.append("&nbsp; 2x"+NumberFormat.getNumberInstance().format(dumbbellSide)+"<br/>");
+			sb.append("<br/>");
+		}
+		
+		if(weight.compareTo(new BigDecimal(barbellWeight)) >= 0) { //weight >= barbellWeight
+			sb.append("Barbell:<br/>");
+			String[] possiblePlates = getResources().getStringArray(R.array.plateSizes);
+			BigDecimal barbellSide = weight.subtract(new BigDecimal(45)).multiply(new BigDecimal("0.5"));
+			Log.e("Plates", "Barbell side: "+barbellSide.toString());
+			Map<BigDecimal, Integer> plateCountsPerSide = getPlates(barbellSide, possiblePlates);
+			
+			List<BigDecimal> usedPlates = new ArrayList<BigDecimal>(plateCountsPerSide.keySet());
+			Collections.sort(usedPlates);
+			BigDecimal totalWeightPerSide = BigDecimal.ZERO;
+			for(Map.Entry<BigDecimal, Integer> entry: plateCountsPerSide.entrySet()) {
+				totalWeightPerSide = totalWeightPerSide.add(entry.getKey().multiply(new BigDecimal(entry.getValue())));
+			}
+//			BigDecimal totalWeight = totalWeightPerSide.multiply(new BigDecimal(2)).add(new BigDecimal(45));
+			
+//			BigDecimal deficient = new BigDecimal(weight).subtract(totalWeight.multiply(new BigDecimal(2)));
+			if(usedPlates.size()==0) {
+				sb.append("&nbsp; <i>(none)</i><br/>");
+			} else {
+				for(int i=usedPlates.size()-1;i>=0;i--) {
+					BigDecimal usedPlate = usedPlates.get(i);
+					sb.append("&nbsp; "+plateCountsPerSide.get(usedPlate)*2+"x"+usedPlate+"<br/>");
+				}
+			}
+			sb.append("&nbsp; +45 <i>(bar)</i>");
+//			if(deficient.compareTo(BigDecimal.ZERO) > 0) {
+//				sb.append(" (short "+deficient+")<br/>");	
+//			}
+			//sb.append(" = "+totalWeight);
+		}
+		
+		sb.append("</font>");
+		return sb.toString();
+	}
+
+	public Map<BigDecimal, Integer> getPlates(BigDecimal weight, String[] possiblePlatesUnsorted) {
+		Map<BigDecimal, Integer> plateSizeToCount = new HashMap<BigDecimal, Integer>();
+		BigDecimal[] possiblePlates = new BigDecimal[possiblePlatesUnsorted.length];
+		for(int i = 0;i<possiblePlatesUnsorted.length;i++) {
+			possiblePlates[i]=new BigDecimal(possiblePlatesUnsorted[i]);
+		}
+		//Reverse sort, start with big plates
+		Arrays.sort(possiblePlates, new Comparator<BigDecimal>() {
+			@Override
+			public int compare(BigDecimal left, BigDecimal right) {
+				return right.compareTo(left);
+			}			
+		});
+		
+		BigDecimal remaining = weight;
+		for(int plateIndex = 0; plateIndex < possiblePlates.length; /*None*/ ) {
+				BigDecimal plate = possiblePlates[plateIndex];
+				if(remaining.compareTo(plate) >= 0) { //Remaining >= PlateWeight
+					if(plateSizeToCount.containsKey(plate)) {
+						plateSizeToCount.put(plate, plateSizeToCount.get(plate)+1);
+					} else {
+						plateSizeToCount.put(plate, 1);
+					}
+					remaining = remaining.subtract(plate);
+				} else {
+					plateIndex++;
+				}
+		}
+		
+		return plateSizeToCount;
 	}
 	
 	private String formatEntry(LogEntry entry) {

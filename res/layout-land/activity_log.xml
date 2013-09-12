@@ -27,17 +27,21 @@
                     android:paddingRight="@dimen/activity_horizontal_margin"
                     android:paddingTop="@dimen/activity_vertical_margin" >
 
-                    <Space
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="2" />
+                
+                 <TextView
+            android:id="@+id/plateView"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="10"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceSmall" />
 
                     <LinearLayout
                         android:id="@+id/unitSelection"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:layout_marginRight="@dimen/spinner_horizontal_margin"
-                        android:layout_weight="2"
+                        android:layout_weight="1"
                         android:gravity="center_horizontal"
                         android:orientation="vertical" >
 
@@ -64,7 +68,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:layout_marginLeft="@dimen/spinner_horizontal_margin"
-                        android:layout_weight="2"
+                        android:layout_weight="1"
                         android:gravity="center_horizontal"
                         android:orientation="vertical" >
 
@@ -84,10 +88,6 @@
                             android:layout_weight="1" />
                     </LinearLayout>
 
-                    <Space
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="2" />
                 </LinearLayout>
 
                 <ProgressBar
