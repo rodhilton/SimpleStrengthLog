@@ -53,10 +53,11 @@ import com.nomachetejuggling.ssl.model.Exercise;
 import com.nomachetejuggling.ssl.model.LogEntry;
 import com.nomachetejuggling.ssl.model.MuscleGroups;
 
-// Release 1.5:
+// Release 1.6:
 //TODO: warn when canceling an Add after making changes (dirty flag, make sure to persist)
 
 // -- Future Release
+//FIXME: use a background service instead of a timer, app behaves weird if doesnt have focus during timer countdown
 //FUTURE: Edit name of exercise (tough because it has to spider all logs and rename there.. or at least warn people)
 //FUTURE: "workout summary" feature with all of current day's stuff.  datepicker for other dates.
 //FUTURE: (maybe) full historical record for an exercise to see improvement.  should this be part of larger suite?

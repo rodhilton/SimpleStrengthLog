@@ -36,5 +36,15 @@
     <string name="weightPickerLabel">Weight</string>
     <string name="weightPickerLabelImperial">Pounds</string>
     <string name="weightPickerLabelMetric">Kilograms</string>
-
+    <string name="heaviestDumbbell">220</string>
+    <string name="barbellWeight">45</string>
+    <string-array name="plateSizes">
+        <item>45</item>
+        <item>25</item>
+        <item>35</item>
+        <item>5</item>
+        <item>2.5</item>
+        <item>10</item>
+    </string-array>
+    
 </resources>
